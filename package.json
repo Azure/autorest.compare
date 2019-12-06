@@ -1,0 +1,31 @@
+{
+  "name": "@autorest/compare",
+  "version": "0.1.0",
+  "description": "Compares the output between two AutoRest runs to check for material differences.",
+  "main": "dist/index.js",
+  "bin": {
+    "autorest-compare": "dist/index.js"
+  },
+  "scripts": {
+    "start": "ts-node index.ts",
+    "build": "tsc -p ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Azure/autorest.compare.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Azure/autorest.compare/issues"
+  },
+  "homepage": "https://github.com/Azure/autorest.compare#readme",
+  "dependencies": {
+    "tree-sitter-typescript": "^0.15.1"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.14",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
+  }
+}
