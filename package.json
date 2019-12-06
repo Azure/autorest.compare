@@ -7,7 +7,7 @@
     "autorest-compare": "dist/index.js"
   },
   "scripts": {
-    "start": "ts-node index.ts",
+    "start": "ts-node src/index.ts",
     "build": "tsc -p ."
   },
   "repository": {

@@ -1,3 +1,97 @@
+# AutoRest Compare
+
+`autorest-compare` provides a regression testing tool which can compare the
+output of two AutoRest runs to determine whether there are any material changes
+to the generated source for a given service spec.  Comparisons can be made between:
+
+- Versions of the AutoRest CLI (v2 versus v3)
+- Versions of AutoRest Core
+- Versions of the AutoRest modeler
+- Versions of a language generator
+
+The primary use case for this tool is to determine whether changes to the
+[AutoRest v3 modeler](https://github.com/Azure/autorest.modelerfour) have
+changed the output of the various language generators in undesirable ways.
+
+## Installation
+
+This tool is written for Node.js [Node.js](https://nodejs.org/en/), so make sure
+to have that installed before continuing (we recommend 10.16.x LTS).
+
+With Node.js installed, you can install `autorest-compare` by running the
+following command:
+
+```shell
+npm install -g @autorest/compare
+```
+
+If you'd prefer not to install this tool globally, you can use the following
+command to invoke it with [`npx`] on a one-shot basis:
+
+```
+npx @autorest/compare [arguments]
+```
+
+**NOTE:** Some dependencies contain native code components that need to be
+compiled before they can be used so you'll need to have the appropriate C
+compiler and Python 2.7/3.5 or greater installed on your machine before using
+this tool.
+
+### Windows
+
+If you don't already have Python and the MS Visual Studio C++ compiler tools
+installed, you can easily install them with the following command:
+
+```shell
+npm install --global windows-build-tools
+```
+
+### Linux
+
+Install gcc and  . For Debian/Ubuntu, the following command should work:
+
+```shell
+sudo apt-get install build-essential python
+```
+
+### macOS
+
+On macOS, Python should be installed by default.  The C/C++ compiler can be
+installed with XCode by running the following command:
+
+```shell
+xcode-select --install
+```
+
+## Running `autorest-compare`
+
+Running `autorest-compare --help` will display the list of arguments you might
+wish to use.  Specific usage scenarios are described in the following sections.
+
+* Comparing the Python output between two versions of `@autorest/modelerfour`:
+
+  ```shell
+  autorest-compare --python --spec-path path/to/spec.json \
+    --output-path path/to/output
+    --compare-base --beta --use:@autorest/modelerfour@4.1.59 \
+    --compare-next --beta --use:@autorest/modelerfour@4.1.60
+  ```
+
+* Comparing the TypeScript output of generating all of the specs in the
+  `azure-rest-api-specs` repository between AutoRest v2 and AutoRest v3
+  (/beware/, this takes a while):
+
+  ```shell
+  autorest-compare --typescript --use-azure-specs \
+    --output-path path/to/output
+    --compare-base \
+    --compare-next --beta
+  ```
+
+## How it Works
+
+> TODO: Fill this in.
+
 
 # Contributing
 
