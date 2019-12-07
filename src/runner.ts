@@ -61,8 +61,10 @@ export async function runAutoRest(
   options: AutoRestOptions
 ): Promise<AutoRestResult> {
   return new Promise((resolve, reject) => {
-    const autoRestCommand =
-      options.useBeta === true ? "autorest-beta" : "autorest";
+    const autoRestCommand = path.resolve(
+      __dirname,
+      "../node_modules/.bin/autorest-beta"
+    );
 
     const args = [
       // The AutoRest version, if specified
@@ -93,7 +95,7 @@ export async function runAutoRest(
 
     const startTime = Date.now();
 
-    const autoRestProcess = cp.spawn(autoRestCommand, args);
+    const autoRestProcess = cp.fork(autoRestCommand, args, { stdio: "pipe" });
 
     let normalOutput = "";
     autoRestProcess.stdout.on("data", data => {

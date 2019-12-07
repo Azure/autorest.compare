@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/Azure/autorest.compare#readme",
   "dependencies": {
+    "@autorest/autorest": "^3.0.6141",
     "tree-sitter-typescript": "^0.15.1"
   },
   "devDependencies": {
