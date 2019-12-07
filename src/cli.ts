@@ -37,6 +37,7 @@ export function getAutoRestOptionsFromArgs(
 
     if (argName === "compare-base" || argName === "compare-next") {
       args.unshift(arg);
+      break;
     } else if (argName === "version") {
       options.version = argValue;
     } else if (argName === "beta") {

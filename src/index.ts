@@ -26,11 +26,11 @@ ${languageArgsString}
 
 Spec Arguments
 
-  --spec-path=<path to .json or spec folder>   Use the specified spec path for code generation
-  --azure-specs[=""]                           Use the azure-rest-api-specs repository for code generation.
-                                               The value of this parameter can either be a comma-separated list
-                                               of relative paths under the 'specifications' folder of this repository
-                                               or omitted entirely to generate code for every spec in the repository.
+  --spec-path=[path]                           Use the specified spec path for code generation.  Relative paths will
+                                               be resolved against the value of --spec-root-path if specified.
+                                               NOTE: This parameter can be used multiple times to specify more than
+                                               one spec path.
+  --spec-root-path=[path]                      The root path from which all spec paths will be resolved.
 
 Output Arguments
 
@@ -51,14 +51,9 @@ Run Arguments
 `.trimLeft()
     );
   } else {
-    // TODO: Accept this as a CLI parameter
-    const specsToGenerate = ["redis/resource-manager"];
-
-    const specRepoRoot = path.resolve(
-      __dirname,
-      "../../..",
-      "azure-rest-api-specs"
-    );
+    const specPaths = [];
+    let outputPath: string | undefined;
+    let specRootPath: string | undefined;
 
     // Build configuration from arguments
     let language: AutoRestLanguage | undefined;
@@ -66,11 +61,17 @@ Run Arguments
     let nextCompareOptions: AutoRestOptions = {};
 
     while (args.length > 0) {
-      const [argName] = parseArgument(args.shift());
+      const [argName, argValue] = parseArgument(args.shift());
       if (argName === `compare-base`) {
         [baseCompareOptions, args] = getAutoRestOptionsFromArgs(args);
       } else if (argName === `compare-next`) {
         [nextCompareOptions, args] = getAutoRestOptionsFromArgs(args);
+      } else if (argName === `spec-path`) {
+        specPaths.push(argValue);
+      } else if (argName === `spec-root-path`) {
+        specRootPath = argValue;
+      } else if (argName === `output-path`) {
+        outputPath = argValue;
       } else if (AutoRestLanguages.indexOf(argName as AutoRestLanguage) > -1) {
         language = argName as AutoRestLanguage;
       }
@@ -85,20 +86,25 @@ Run Arguments
       );
     }
 
+    if (outputPath === undefined) {
+      throw new Error(
+        "An output path must be provided with the --output-path parameter."
+      );
+    }
+
+    if (specPaths.length === 0) {
+      throw new Error(
+        "A spec path must be provided with the --spec-path parameter."
+      );
+    }
+
     console.log(`*** Comparing output of ${language} generator...`);
 
-    for (const specPath of specsToGenerate) {
-      const fullSpecPath = path.resolve(
-        specRepoRoot,
-        "specification",
-        specPath
-      );
-      const outputPath = path.resolve(
-        __dirname,
-        "generated",
-        language,
-        specPath
-      );
+    for (const specPath of specPaths) {
+      const fullSpecPath = path.resolve(specRootPath || ".", specPath);
+      if (!path.isAbsolute(outputPath)) {
+        outputPath = path.resolve(outputPath);
+      }
 
       console.log("*** Generating code for spec at path:", fullSpecPath);
 
@@ -109,6 +115,7 @@ Run Arguments
         path.join(outputPath, "base"),
         baseCompareOptions
       );
+
       const nextRunPromise = runAutoRest(
         language,
         fullSpecPath,
@@ -125,6 +132,7 @@ Run Arguments
         console.log("\nBase AutoRest Output:\n");
         console.log(baseResult.processOutput);
       }
+
       if (nextCompareOptions.debug) {
         console.log("\nNext AutoRest Output:\n");
         console.log(nextResult.processOutput);
