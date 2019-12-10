@@ -45,7 +45,6 @@ Comparison Arguments
 Run Arguments
 
   --use:<package@version>                      Use a specific AutoRest core, language, or extension package
-  --beta                                       Use the 'autorest-beta' (AutoRest v3) command instead of 'autorest'
   --debug                                      Write debug output for the AutoRest run
 
 `.trimLeft()

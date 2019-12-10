@@ -40,8 +40,6 @@ export function getAutoRestOptionsFromArgs(
       break;
     } else if (argName === "version") {
       options.version = argValue;
-    } else if (argName === "beta") {
-      options.useBeta = argValue === "true";
     } else if (argName === "use") {
       options.useArgs.push(argValue);
     } else if (argName === "debug") {

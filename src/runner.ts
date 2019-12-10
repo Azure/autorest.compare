@@ -9,7 +9,6 @@ import { getPathsRecursively } from "./util";
  * Defines options that will be passed along to the AutoRest run.
  */
 export interface AutoRestOptions {
-  useBeta?: boolean;
   useArgs?: string[];
   version?: string;
   debug?: boolean;
@@ -94,7 +93,6 @@ export async function runAutoRest(
     }
 
     const startTime = Date.now();
-
     const autoRestProcess = cp.fork(autoRestCommand, args, { stdio: "pipe" });
 
     let normalOutput = "";
