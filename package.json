@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "ts-node src/index.ts",
+    "test-run": "ts-node src/index.ts --typescript --spec-path:redis/resource-manager --spec-root-path:../azure-rest-api-specs/specification --output-path:generated/ --compare-base --version:^2.0.0 --compare-next --version:3.0.6170",
     "build": "tsc -p ."
   },
   "repository": {
