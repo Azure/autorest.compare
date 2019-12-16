@@ -67,15 +67,15 @@ ${languageArgsString}
 
 Spec Arguments
 
-  --spec-path=[path]                           Use the specified spec path for code generation.  Relative paths will
+  --spec-path:[path]                           Use the specified spec path for code generation.  Relative paths will
                                                be resolved against the value of --spec-root-path if specified.
                                                NOTE: This parameter can be used multiple times to specify more than
                                                one spec path.
-  --spec-root-path=[path]                      The root path from which all spec paths will be resolved.
+  --spec-root-path:[path]                      The root path from which all spec paths will be resolved.
 
 Output Arguments
 
-  --output-path=[generated output path]        The path where generated source files will be omitted.  This should
+  --output-path:[generated output path]        The path where generated source files will be omitted.  This should
                                                generally be under a temporary file path.  When a --spec-root-path
                                                is provided, the path --spec-path relative to the --spec-root-path
                                                will be used as the subpath of the --output-path.
