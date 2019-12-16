@@ -83,6 +83,7 @@ Output Arguments
 Comparison Arguments
 
   --compare-base[:path] [run arguments]        Indicates that what follows are arguments for the base of the comparison.
+
                                                You may also pass a path to an existing folder of output from a previous
                                                AutoRest run: --compare-base:path/to/existing/output.  If a --spec-root-path
                                                is provided, it is expected that the existing output will be located
