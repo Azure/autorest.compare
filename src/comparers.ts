@@ -4,39 +4,93 @@
 import * as path from "path";
 import { AutoRestResult } from "./runner";
 
+/**
+ * A function which compares two items and returns a CompareResult.
+ */
 export type Comparer<TItem extends NamedItem> = (
   oldItem: TItem,
   newItem: TItem
 ) => CompareResult;
 
+/**
+ * An item with a name.  The name is typically used to compare lists
+ * of similar items to determine whether one exists in both lists.
+ */
 export interface NamedItem {
   name: string;
 }
 
+/**
+ * An item with an order identifier.  This is used when an item should have
+ * its list order taken into consideration when being compared.
+ */
 export interface OrderedItem {
   ordinal: number;
 }
 
+/**
+ * Describes details of a specific file, particularly its name (relative path
+ * and file name) and the base path from which relative paths can be resolved.
+ */
 export interface FileDetails {
   name: string;
   basePath: string;
 }
 
+/**
+ * Enumerates the types of messages that may be emitted.
+ */
 export enum MessageType {
+  /**
+   * An outline message for organizational purposes.
+   */
   Outline,
+
+  /**
+   * A message that indicates an item was added.
+   */
   Added,
+
+  /**
+   * A message that indicates an item was removed.
+   */
   Removed,
+
+  /**
+   * A message that indicates an item has changed.
+   */
   Changed
 }
 
+/**
+ * Describes a message that is emitted from a comparison of two semantic
+ * elements in the generated source.  The total comparison output is treated as
+ * an outline where nodes can have children which report differences
+ * recursively.
+ */
 export type CompareMessage = {
+  /**
+   * The message describing this
+   */
   message: string;
+
+  /**
+   * The MessageType that indicates what kind of message is conveyed.
+   */
   type: MessageType;
+
+  /**
+   * The child messages that provide futher comparison granularity.
+   */
   children?: CompareMessage[];
 };
 
 export type CompareResult = CompareMessage | undefined;
 
+/**
+ * Simplifies the creation of a `CompareResult` which only needs to be returned
+ * when there are child messages for a comparison output.
+ */
 export function prepareResult(
   message: string,
   messageType: MessageType,
@@ -52,6 +106,22 @@ export function prepareResult(
     : undefined;
 }
 
+/**
+ * Compares two lists of items, reporting on any items that are added or removed
+ * in the new list and the differences between items with the same name that
+ * exist in both lists.  If `isOrderSignificant` is passed, items with an
+ * `ordinal` property have their list order compared so that reorderings can be
+ * reported.
+ *
+ * @param resultMessage The message for the CompareResult that is returned from
+ *                      this comparison.
+ * @param messageType   The type of message returned from this comparison.
+ * @param oldItems      The array of "old" items to compare against.
+ * @param newItems      The array of "new" items to compare from.
+ * @param compareFunc   The Comparer to use when comparing items that exist in both arrays.
+ * @param isOrderSignificant When true, the `ordinal` field of two items is also
+                             considered during comparisons.
+ */
 export function compareItems<TItem extends NamedItem>(
   resultMessage: string,
   messageType: MessageType,
@@ -130,6 +200,10 @@ export function compareItems<TItem extends NamedItem>(
   return prepareResult(resultMessage, messageType, messages);
 }
 
+/**
+ * Performs a strict comparison of two values and returns a message
+ * reporting the difference, if any.
+ */
 export function compareValue(
   message: string,
   oldValue: any,
@@ -162,6 +236,10 @@ export interface CompareSourceOptions {
   comparersByType: ComparerIndex;
 }
 
+/**
+ * Compares two files which are considered to be the same (having the same file
+ * path) using a comparer that is selected based on the file's extension.
+ */
 export function compareFile(
   oldFile: FileDetails,
   newFile: FileDetails,
@@ -172,6 +250,9 @@ export function compareFile(
   return comparer ? comparer(oldFile, newFile) : undefined;
 }
 
+/**
+ * Compares the set of output files for two AutoRest runs.
+ */
 export function compareOutputFiles(
   baseResult: AutoRestResult,
   nextResult: AutoRestResult,
