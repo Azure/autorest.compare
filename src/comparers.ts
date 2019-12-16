@@ -1,44 +1,195 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { setDifference } from "./util";
+import * as path from "path";
 import { AutoRestResult } from "./runner";
 
-export type Comparer = (baseResult: AutoRestResult, nextResult: AutoRestResult) => Promise<void>;
+export type Comparer<TItem extends NamedItem> = (
+  oldItem: TItem,
+  newItem: TItem
+) => CompareResult;
+
+export interface NamedItem {
+  name: string;
+}
+
+export interface OrderedItem {
+  ordinal: number;
+}
+
+export interface FileDetails {
+  name: string;
+  basePath: string;
+}
+
+export enum MessageType {
+  Outline,
+  Added,
+  Removed,
+  Changed
+}
+
+export type CompareMessage = {
+  message: string;
+  type: MessageType;
+  children?: CompareMessage[];
+};
+
+export type CompareResult = CompareMessage | undefined;
+
+export function prepareResult(
+  message: string,
+  messageType: MessageType,
+  results: CompareResult[]
+): CompareResult {
+  const children = results.filter(r => r !== undefined);
+  return children.length > 0
+    ? {
+        message,
+        type: messageType,
+        children
+      }
+    : undefined;
+}
+
+export function compareItems<TItem extends NamedItem>(
+  resultMessage: string,
+  messageType: MessageType,
+  oldItems: TItem[],
+  newItems: TItem[],
+  compareFunc: Comparer<TItem>,
+  isOrderSignificant?: boolean
+): CompareResult {
+  const messages: CompareMessage[] = [];
+  let orderChanged = false;
+
+  // Build an index of the new items
+  const oldItemIndex: object = {};
+  for (const oldItem of oldItems) {
+    oldItemIndex[oldItem.name] = oldItem;
+  }
+
+  for (const newItem of newItems) {
+    if (newItem.name in oldItemIndex) {
+      // Delete the item from the index because it exists in both
+      const oldItem = oldItemIndex[newItem.name];
+      delete oldItemIndex[newItem.name];
+
+      // If the items are ordered, compare the order
+      if (isOrderSignificant && orderChanged === false) {
+        const oldOrder: number | undefined = (oldItem as any).ordinal;
+        const newOrder: number | undefined = (newItem as any).ordinal;
+
+        orderChanged =
+          oldOrder !== undefined &&
+          newOrder !== undefined &&
+          oldOrder !== newOrder;
+
+        if (orderChanged) {
+          messages.push({
+            message: "Order Changed",
+            type: MessageType.Outline,
+            children: [
+              {
+                message: oldItems.map(i => i.name).join(", "),
+                type: MessageType.Removed
+              },
+              {
+                message: newItems.map(i => i.name).join(", "),
+                type: MessageType.Added
+              }
+            ]
+          });
+        }
+      }
+
+      // Compare the two items and store the result if one was
+      // returned because this indicates a difference
+      const result = compareFunc(oldItem, newItem);
+      if (result) {
+        messages.push(result);
+      }
+    } else {
+      messages.push({
+        message: newItem.name,
+        type: MessageType.Added
+      });
+    }
+  }
+
+  // If there are any items left in oldItemIndex it means they
+  // were not present in newItems
+  for (const oldItemName of Object.keys(oldItemIndex)) {
+    // Insert removed items at the front of the list
+    messages.unshift({
+      message: oldItemName,
+      type: MessageType.Removed
+    });
+  }
+
+  return prepareResult(resultMessage, messageType, messages);
+}
+
+export function compareValue(
+  message: string,
+  oldValue: any,
+  newValue: any
+): CompareResult {
+  return oldValue !== newValue
+    ? {
+        message,
+        type: MessageType.Outline,
+        children: [
+          { message: `${oldValue}`, type: MessageType.Removed },
+          { message: `${newValue}`, type: MessageType.Added }
+        ]
+      }
+    : undefined;
+}
 
 /**
- * Compares the outputFiles of two AutoRestResults to see if there are any
- * unique files contained in either output.
+ * Represents an object with file extensions ("ts", "json", etc) as keys and
+ * file comparer functions as the associated values.
  */
-export async function compareFileSets(
+export interface ComparerIndex {
+  [key: string]: Comparer<FileDetails>;
+}
+
+/**
+ * Specifies options for comparing source files.
+ */
+export interface CompareSourceOptions {
+  comparersByType: ComparerIndex;
+}
+
+export function compareFile(
+  oldFile: FileDetails,
+  newFile: FileDetails,
+  options: CompareSourceOptions
+): CompareResult {
+  const extension = path.extname(oldFile.name).substr(1);
+  const comparer = options.comparersByType[extension];
+  return comparer ? comparer(oldFile, newFile) : undefined;
+}
+
+export function compareOutputFiles(
   baseResult: AutoRestResult,
-  nextResult: AutoRestResult
-): Promise<void> {
-  const baseFileSet = new Set(baseResult.outputFiles);
-  const nextFileSet = new Set(nextResult.outputFiles);
-  const ignoredFiles = new Set(["code-model-v1"]);
-
-  const baseUniqueFiles = setDifference(
-    setDifference(baseFileSet, nextFileSet),
-    ignoredFiles
+  nextResult: AutoRestResult,
+  options: CompareSourceOptions
+): CompareResult {
+  return compareItems(
+    "Generated Output Files",
+    MessageType.Outline,
+    baseResult.outputFiles.map(file => ({
+      name: file,
+      basePath: baseResult.outputPath
+    })),
+    nextResult.outputFiles.map(file => ({
+      name: file,
+      basePath: nextResult.outputPath
+    })),
+    (oldFile, newFile) => compareFile(oldFile, newFile, options)
   );
-
-  const nextUniqueFiles = setDifference(
-    setDifference(nextFileSet, baseFileSet),
-    ignoredFiles
-  );
-
-  if (baseUniqueFiles.size > 0 || nextUniqueFiles.size > 0) {
-    throw new Error(`Generated output has different file sets.
-
-Base Output Unique Files:
-
-${Array.from(baseUniqueFiles).join("\n")}
-Next Output Unique Files:
-
-${Array.from(nextUniqueFiles).join("\n")}
-`);
-  }
 }
 
 /**
@@ -50,14 +201,4 @@ export async function compareDuration(
   nextResult: AutoRestResult
 ): Promise<void> {
   // TODO: Write some logic for this
-}
-
-/**
- * Returns the default set of comparers.
- */
-export function getDefaultComparers(): Comparer[] {
-  return [
-    compareFileSets,
-    compareDuration
-  ];
 }

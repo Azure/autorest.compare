@@ -2,7 +2,14 @@ import * as fs from "fs";
 import * as path from "path";
 import * as Parser from "tree-sitter";
 import * as TypeScript from "tree-sitter-typescript/typescript";
-import { AutoRestResult } from "../runner";
+import {
+  CompareResult,
+  FileDetails,
+  prepareResult,
+  compareItems,
+  compareValue,
+  MessageType
+} from "../comparers";
 
 const parser = new Parser();
 parser.setLanguage(TypeScript);
@@ -10,6 +17,7 @@ parser.setLanguage(TypeScript);
 export type ParameterDetails = {
   name: string;
   type: string;
+  ordinal: number;
   isOptional: boolean;
 };
 
@@ -85,13 +93,17 @@ function extractField(fieldNode: Parser.SyntaxNode): FieldDetails {
   };
 }
 
-function extractParameter(parameterNode: Parser.SyntaxNode): ParameterDetails {
+function extractParameter(
+  parameterNode: Parser.SyntaxNode,
+  ordinal: number
+): ParameterDetails {
   const [nameNode, typeNode] = parameterNode.namedChildren;
 
   return {
     name: nameNode.text,
-    isOptional: parameterNode.type === "optional_parameter",
-    type: typeNode ? typeNode.children[1].text : "any"
+    type: typeNode ? typeNode.children[1].text : "any",
+    ordinal,
+    isOptional: parameterNode.type === "optional_parameter"
   };
 }
 
@@ -102,7 +114,7 @@ function extractMethod(methodNode: Parser.SyntaxNode): MethodDetails {
   return {
     name: (methodNode as any).nameNode.text,
     returnType: returnTypeNode ? returnTypeNode.children[1].text : "any",
-    parameters: parameterNodes.map(extractParameter)
+    parameters: parameterNodes.map((p, i) => extractParameter(p, i))
   };
 }
 
@@ -157,8 +169,7 @@ export function isModuleScopeVariable(
   );
 }
 
-export function extractDetails(parseTree: Parser.Tree): SourceDetails {
-  console.error(parseTree.rootNode.toString());
+export function extractSourceDetails(parseTree: Parser.Tree): SourceDetails {
   return {
     classes: parseTree.rootNode
       .descendantsOfType("class_declaration")
@@ -174,33 +185,67 @@ export function extractDetails(parseTree: Parser.Tree): SourceDetails {
   };
 }
 
-export function buildSourceDetails(
-  sourceFiles: string[],
-  baseSourcePath: string
-): SourceDetails {
-  for (const file of sourceFiles) {
-    const parseTree = parseFile(path.resolve(baseSourcePath, file));
-    extractDetails(parseTree);
-  }
-
-  return {
-    classes: [],
-    interfaces: [],
-    types: [],
-    variables: []
-  };
+export function compareParameter(
+  oldParameter: ParameterDetails,
+  newParameter: ParameterDetails
+): CompareResult {
+  newParameter.isOptional;
+  return prepareResult(oldParameter.name, MessageType.Changed, [
+    compareValue("Type", oldParameter.type, newParameter.type),
+    compareValue("Optional", oldParameter.isOptional, newParameter.isOptional)
+  ]);
 }
 
-export async function compareTypeScriptSource(
-  baseResult: AutoRestResult,
-  nextResult: AutoRestResult
-): Promise<void> {
-  const baseSourceDetails = buildSourceDetails(
-    baseResult.outputFiles,
-    baseResult.outputPath
+export function compareMethod(
+  oldMethod: MethodDetails,
+  newMethod: MethodDetails
+): CompareResult {
+  return prepareResult(oldMethod.name, MessageType.Changed, [
+    compareItems(
+      "Parameters",
+      MessageType.Outline,
+      oldMethod.parameters,
+      newMethod.parameters,
+      compareParameter,
+      true
+    ),
+    compareValue("Return Type", oldMethod.returnType, newMethod.returnType)
+  ]);
+}
+
+export function compareClass(
+  oldClass: ClassDetails,
+  newClass: ClassDetails
+): CompareResult {
+  return prepareResult(oldClass.name, MessageType.Changed, [
+    compareItems(
+      "Methods",
+      MessageType.Outline,
+      oldClass.methods,
+      newClass.methods,
+      compareMethod
+    )
+  ]);
+}
+
+export function compareFile(
+  oldFile: FileDetails,
+  newFile: FileDetails
+): CompareResult {
+  const oldSource = extractSourceDetails(
+    parseFile(path.resolve(oldFile.basePath, oldFile.name))
   );
-  const nextSourceDetails = buildSourceDetails(
-    nextResult.outputFiles,
-    nextResult.outputPath
+  const newSource = extractSourceDetails(
+    parseFile(path.resolve(newFile.basePath, newFile.name))
   );
+
+  return prepareResult(oldFile.name, MessageType.Changed, [
+    compareItems(
+      "Classes",
+      MessageType.Outline,
+      oldSource.classes,
+      newSource.classes,
+      compareClass
+    )
+  ]);
 }

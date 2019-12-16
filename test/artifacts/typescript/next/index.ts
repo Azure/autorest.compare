@@ -8,6 +8,7 @@ class SomeClass {
   changedReturnType(firstParam: string): number {
     return 311;
   }
+  reorderedParams(secondParam: string, firstParam: string): void {}
 }
 
 interface SomeInterface {}
