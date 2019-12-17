@@ -25,6 +25,8 @@ describe("TypeScript Parser", function() {
             {
               name: "removedMethod",
               returnType: "void",
+              visibility: "public",
+              genericTypes: [],
               parameters: [
                 {
                   name: "optional",
@@ -37,6 +39,8 @@ describe("TypeScript Parser", function() {
             {
               name: "changedParamType",
               returnType: "void",
+              visibility: "public",
+              genericTypes: [],
               parameters: [
                 {
                   name: "firstParam",
@@ -49,6 +53,8 @@ describe("TypeScript Parser", function() {
             {
               name: "changedReturnType",
               returnType: "string",
+              visibility: "public",
+              genericTypes: [],
               parameters: [
                 {
                   name: "firstParam",
@@ -61,6 +67,8 @@ describe("TypeScript Parser", function() {
             {
               name: "reorderedParams",
               returnType: "void",
+              visibility: "public",
+              genericTypes: [],
               parameters: [
                 {
                   name: "firstParam",
@@ -75,6 +83,25 @@ describe("TypeScript Parser", function() {
                   isOptional: false
                 }
               ]
+            },
+            {
+              name: "hasGenericParam",
+              visibility: "protected",
+              returnType: "void",
+              genericTypes: [
+                {
+                  name: "T",
+                  ordinal: 0
+                }
+              ],
+              parameters: [
+                {
+                  name: "genericParam",
+                  isOptional: false,
+                  ordinal: 0,
+                  type: "T"
+                }
+              ]
             }
           ],
           fields: [
@@ -82,22 +109,22 @@ describe("TypeScript Parser", function() {
               name: "removedField",
               type: "string",
               value: undefined,
-              isPrivate: true,
-              isReadOnly: false
+              isReadOnly: false,
+              visibility: "private"
             },
             {
               name: "visibilityChangedField",
               type: "Namespace.Type",
               value: undefined,
-              isPrivate: false,
-              isReadOnly: false
+              isReadOnly: false,
+              visibility: "public"
             },
             {
               name: "readOnlyChangedField",
               type: "any",
               value: `"stuff"`,
-              isPrivate: true,
-              isReadOnly: true
+              isReadOnly: true,
+              visibility: "private"
             }
           ]
         },
@@ -122,12 +149,33 @@ describe("TypeScript Parser", function() {
           isExported: true
         }
       ],
+      functions: [
+        {
+          genericTypes: [
+            {
+              name: "T",
+              ordinal: 0
+            }
+          ],
+          name: "someFunction",
+          parameters: [
+            {
+              name: "genericParam",
+              type: "T",
+              ordinal: 0,
+              isOptional: false
+            }
+          ],
+          returnType: "string"
+        }
+      ],
       variables: [
         {
           name: "SomeConst",
           type: "SomeUnion",
           value: `"red"`,
-          isExported: true
+          isExported: true,
+          isConst: true
         }
       ]
     } as SourceDetails);
@@ -178,6 +226,7 @@ describe("TypeScript Parser", function() {
       {
         name: "theFunc",
         returnType: "string",
+        genericTypes: [],
         parameters: [
           {
             name: "firstParam",
@@ -190,6 +239,7 @@ describe("TypeScript Parser", function() {
       {
         name: "theFunc",
         returnType: "any",
+        genericTypes: [],
         parameters: [
           {
             name: "differentParam",
