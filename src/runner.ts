@@ -6,6 +6,14 @@ import * as cp from "child_process";
 import { getPathsRecursively } from "./util";
 
 /**
+ * Details for the output of an AutoRest run (pre-existing or not).
+ */
+export interface OutputDetails {
+  outputPath: string;
+  useExisting: boolean;
+}
+
+/**
  * Defines options that will be passed along to the AutoRest run.
  */
 export interface AutoRestOptions {
@@ -18,11 +26,11 @@ export interface AutoRestOptions {
  * Describes different aspects of the result of an AutoRest run.
  */
 export interface AutoRestResult {
-  version: string;
+  version?: string;
   outputPath: string;
   outputFiles: string[];
-  processOutput: string;
-  timeElapsed: number;
+  processOutput?: string;
+  timeElapsed?: number;
 }
 
 /**
@@ -49,11 +57,35 @@ export const AutoRestLanguages: AutoRestLanguage[] = [
 ];
 
 /**
+ * Gets the base AutoRestResult by gathering the output files under the
+ * given outputPath.
+ */
+function getBaseResult(outputPath: string): AutoRestResult {
+  return {
+    outputPath,
+    outputFiles: getPathsRecursively(outputPath).map(p =>
+      path.relative(outputPath, p)
+    )
+  };
+}
+
+/**
  * Invokes AutoRest asynchronously as a separate process, passing along the
  * specified options.  Returns a Promise that carries an AutoRestResult which
  * describes the result of the run.
  */
-export async function runAutoRest(
+export function runAutoRest(
+  language: AutoRestLanguage,
+  specPath: string,
+  outputDetails: OutputDetails,
+  options: AutoRestOptions
+): Promise<AutoRestResult> {
+  return outputDetails.useExisting
+    ? Promise.resolve(getBaseResult(outputDetails.outputPath))
+    : spawnAutoRest(language, specPath, outputDetails.outputPath, options);
+}
+
+async function spawnAutoRest(
   language: AutoRestLanguage,
   specPath: string,
   outputPath: string,
@@ -119,11 +151,8 @@ export async function runAutoRest(
       const timeElapsed = Date.now() - startTime;
 
       resolve({
+        ...getBaseResult(outputPath),
         version: options.version,
-        outputPath,
-        outputFiles: getPathsRecursively(outputPath).map(p =>
-          path.relative(outputPath, p)
-        ),
         processOutput: normalOutput,
         timeElapsed
       });
