@@ -4,13 +4,15 @@ import {
   parseFile,
   extractSourceDetails,
   SourceDetails,
+  compareClass,
+  compareInterface,
   compareParameter,
   compareMethod
 } from "../../src/languages/typescript";
 import { MessageType } from "../../src/comparers";
 
 describe("TypeScript Parser", function() {
-  it("extracts classes", function() {
+  it("extracts semantic elements from source", function() {
     const parseTree = parseFile(
       path.resolve(__dirname, "../artifacts/typescript/base/index.ts")
     );
@@ -136,6 +138,8 @@ describe("TypeScript Parser", function() {
         },
         {
           name: "ExportedClass",
+          baseClass: "BaseClass",
+          interfaces: ["SomeInterface", "AnotherInterface"],
           methods: [],
           fields: [],
           isExported: true
@@ -156,6 +160,7 @@ describe("TypeScript Parser", function() {
         },
         {
           name: "AnotherInterface",
+          interfaces: ["BaseInterface"],
           methods: [],
           fields: [],
           isExported: true
@@ -234,6 +239,73 @@ describe("TypeScript Parser", function() {
           children: [
             { message: "false", type: MessageType.Removed },
             { message: "true", type: MessageType.Added }
+          ]
+        }
+      ]
+    });
+  });
+
+  it("compares base class references", () => {
+    const result = compareClass(
+      {
+        name: "SomeClass",
+        baseClass: "BaseClass",
+        methods: [],
+        fields: [],
+        isExported: false
+      },
+      {
+        name: "SomeClass",
+        baseClass: "AnotherClass",
+        methods: [],
+        fields: [],
+        isExported: false
+      }
+    );
+
+    assert.deepEqual(result, {
+      message: "SomeClass",
+      type: MessageType.Changed,
+      children: [
+        {
+          message: "Base Class",
+          type: MessageType.Outline,
+          children: [
+            { message: "BaseClass", type: MessageType.Removed },
+            { message: "AnotherClass", type: MessageType.Added }
+          ]
+        }
+      ]
+    });
+  });
+
+  it("compares interface implementation references", () => {
+    const result = compareClass(
+      {
+        name: "SomeClass",
+        methods: [],
+        fields: [],
+        isExported: false
+      },
+      {
+        name: "SomeClass",
+        interfaces: ["InterfaceA", "InterfaceB"],
+        methods: [],
+        fields: [],
+        isExported: false
+      }
+    );
+
+    assert.deepEqual(result, {
+      message: "SomeClass",
+      type: MessageType.Changed,
+      children: [
+        {
+          message: "Interfaces",
+          type: MessageType.Outline,
+          children: [
+            { message: "InterfaceA", type: MessageType.Added },
+            { message: "InterfaceB", type: MessageType.Added }
           ]
         }
       ]

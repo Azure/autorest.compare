@@ -164,8 +164,38 @@ function isExported(node: Parser.SyntaxNode): boolean {
   return node.parent.type === "export_statement";
 }
 
+function extractImplements(implementsNode: Parser.SyntaxNode): string[] {
+  return implementsNode.namedChildren.map(c => c.text);
+}
+
+function extractImplements(node: Parser.SyntaxNode): string[] {
+  const implementsNode: Parser.SyntaxNode = (node as any).namedChildren.find(
+    n => n.type === "implements_clause"
+  );
+
+  return implementsNode
+    ? implementsNode.namedChildren.map(i => i.text)
+    : undefined;
+}
+
+function extractExtends(node: Parser.SyntaxNode): string[] {
+  const extendsNode: Parser.SyntaxNode = (node as any).namedChildren.find(
+    n => n.type === "extends_clause"
+  );
+
+  return extendsNode ? extendsNode.namedChildren.map(i => i.text) : undefined;
+}
+
 function extractClass(classNode: Parser.SyntaxNode): ClassDetails {
   const classBody: Parser.SyntaxNode = (classNode as any).bodyNode;
+  const heritageNode: Parser.SyntaxNode = (classNode as any).namedChildren.find(
+    n => n.type === "class_heritage"
+  );
+  const baseClass = heritageNode
+    ? (extractExtends(heritageNode) || [])[0]
+    : undefined;
+  const interfaces = heritageNode ? extractImplements(heritageNode) : undefined;
+
   return {
     name: (classNode as any).nameNode.text,
     methods: classBody.namedChildren
@@ -174,12 +204,16 @@ function extractClass(classNode: Parser.SyntaxNode): ClassDetails {
     fields: classBody.namedChildren
       .filter(n => n.type === "public_field_definition")
       .map(extractField),
-    isExported: isExported(classNode)
+    isExported: isExported(classNode),
+    ...(baseClass ? { baseClass } : undefined),
+    ...(interfaces ? { interfaces } : undefined)
   };
 }
 
 function extractInterface(interfaceNode: Parser.SyntaxNode): InterfaceDetails {
   const interfaceBody: Parser.SyntaxNode = (interfaceNode as any).bodyNode;
+  const interfaces = extractExtends(interfaceNode);
+
   return {
     name: (interfaceNode as any).nameNode.text,
     methods: interfaceBody.namedChildren
@@ -188,7 +222,8 @@ function extractInterface(interfaceNode: Parser.SyntaxNode): InterfaceDetails {
     fields: interfaceBody.namedChildren
       .filter(n => n.type === "public_field_definition")
       .map(extractField),
-    isExported: isExported(interfaceNode)
+    isExported: isExported(interfaceNode),
+    ...(interfaces ? { interfaces } : undefined)
   };
 }
 
