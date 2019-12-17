@@ -8,7 +8,9 @@ import {
   prepareResult,
   compareItems,
   compareValue,
-  MessageType
+  MessageType,
+  OrderedItem,
+  compareStrings
 } from "../comparers";
 
 const parser = new Parser();
@@ -21,19 +23,36 @@ export type ParameterDetails = {
   isOptional: boolean;
 };
 
-export type FieldDetails = {
+export interface VariableDetails {
   name: string;
   type: string;
   value?: string;
-  isPrivate: boolean;
-  isReadOnly?: boolean;
-};
+}
 
-export type MethodDetails = {
+export interface ModuleVariableDetails extends VariableDetails {
+  isConst?: boolean;
+  isExported: boolean;
+}
+
+export interface FieldDetails extends VariableDetails {
+  visibility?: Visibility;
+  isReadOnly?: boolean;
+}
+
+export interface GenericTypeParameterDetails extends OrderedItem {}
+
+export interface FunctionDetails {
   name: string;
   returnType: string;
+  genericTypes: GenericTypeParameterDetails[];
   parameters: ParameterDetails[];
-};
+}
+
+export type Visibility = "public" | "private" | "protected";
+
+export interface MethodDetails extends FunctionDetails {
+  visibility: Visibility;
+}
 
 export type InterfaceDetails = {
   name: string;
@@ -58,18 +77,12 @@ export type TypeDetails = {
   isExported: boolean;
 };
 
-export type VariableDetails = {
-  name: string;
-  type: string;
-  value?: string;
-  isExported: boolean;
-};
-
 export type SourceDetails = {
   classes: ClassDetails[];
   interfaces: InterfaceDetails[];
   types: TypeDetails[];
-  variables: VariableDetails[];
+  variables: ModuleVariableDetails[];
+  functions: FunctionDetails[];
 };
 
 export function parseFile(filePath: string): Parser.Tree {
@@ -88,7 +101,9 @@ function extractField(fieldNode: Parser.SyntaxNode): FieldDetails {
     name: (fieldNode as any).nameNode.text,
     type: typeNode ? typeNode.children[1].text : "any",
     value: valueNode ? valueNode.text : undefined,
-    isPrivate: accessibilityNode && accessibilityNode.text !== "public",
+    visibility: accessibilityNode
+      ? (accessibilityNode.text as Visibility)
+      : "private",
     isReadOnly: readOnlyNode !== undefined
   };
 }
@@ -107,14 +122,41 @@ function extractParameter(
   };
 }
 
-function extractMethod(methodNode: Parser.SyntaxNode): MethodDetails {
-  const returnTypeNode = (methodNode as any).returnTypeNode;
-  const parameterNodes = (methodNode as any).parametersNode.namedChildren;
+function extractGenericParameter(
+  genericParamNode: Parser.SyntaxNode,
+  ordinal: number
+): GenericTypeParameterDetails {
+  return {
+    name: genericParamNode.namedChildren[0].text,
+    ordinal
+  };
+}
+
+function extractFunction(functionNode: Parser.SyntaxNode): FunctionDetails {
+  const returnTypeNode = (functionNode as any).returnTypeNode;
+  const parameterNodes = (functionNode as any).parametersNode.namedChildren;
+  const genericNodes = (functionNode as any).typeParametersNode;
 
   return {
-    name: (methodNode as any).nameNode.text,
+    name: (functionNode as any).nameNode.text,
+    genericTypes: genericNodes
+      ? genericNodes.namedChildren.map((p, i) => extractGenericParameter(p, i))
+      : [],
     returnType: returnTypeNode ? returnTypeNode.children[1].text : "any",
     parameters: parameterNodes.map((p, i) => extractParameter(p, i))
+  };
+}
+
+function extractMethod(methodNode: Parser.SyntaxNode): MethodDetails {
+  const accessibilityNode = methodNode.namedChildren.find(
+    n => n.type === "accessibility_modifier"
+  );
+
+  return {
+    ...extractFunction(methodNode),
+    visibility: accessibilityNode
+      ? (accessibilityNode.text as Visibility)
+      : "public"
   };
 }
 
@@ -146,7 +188,9 @@ function extractTypeAlias(typeAliasNode: Parser.SyntaxNode): TypeDetails {
   };
 }
 
-function extractVariable(variableNode: Parser.SyntaxNode): VariableDetails {
+function extractVariable(
+  variableNode: Parser.SyntaxNode
+): ModuleVariableDetails {
   const typeNode = (variableNode as any).typeNode;
   const valueNode = (variableNode as any).valueNode;
 
@@ -154,6 +198,8 @@ function extractVariable(variableNode: Parser.SyntaxNode): VariableDetails {
     name: (variableNode as any).nameNode.text,
     type: typeNode ? typeNode.children[1].text : "any",
     value: valueNode ? valueNode.text : undefined,
+    // There isn't a named child for 'const' so look for its type
+    isConst: variableNode.parent.children[0].type === "const",
     // variable_declarator is wrapped in a lexical_declaration
     isExported: isExported(variableNode.parent)
   };
@@ -181,7 +227,10 @@ export function extractSourceDetails(parseTree: Parser.Tree): SourceDetails {
     variables: parseTree.rootNode
       .descendantsOfType("variable_declarator")
       .filter(isModuleScopeVariable)
-      .map(extractVariable)
+      .map(extractVariable),
+    functions: parseTree.rootNode
+      .descendantsOfType("function_declaration")
+      .map(extractFunction)
   };
 }
 
@@ -196,20 +245,63 @@ export function compareParameter(
   ]);
 }
 
+export function compareFunction(
+  oldFunction: FunctionDetails,
+  newFunction: FunctionDetails,
+  extraResults?: CompareResult[]
+): CompareResult {
+  return prepareResult(oldFunction.name, MessageType.Changed, [
+    compareItems(
+      "Generic Parameters",
+      MessageType.Outline,
+      oldFunction.genericTypes,
+      newFunction.genericTypes,
+      t => undefined, // There's nothing to compare other than existence and order
+      true
+    ),
+    compareItems(
+      "Parameters",
+      MessageType.Outline,
+      oldFunction.parameters,
+      newFunction.parameters,
+      compareParameter,
+      true
+    ),
+    compareValue("Return Type", oldFunction.returnType, newFunction.returnType),
+    ...(extraResults || [])
+  ]);
+}
+
 export function compareMethod(
   oldMethod: MethodDetails,
   newMethod: MethodDetails
 ): CompareResult {
-  return prepareResult(oldMethod.name, MessageType.Changed, [
-    compareItems(
-      "Parameters",
-      MessageType.Outline,
-      oldMethod.parameters,
-      newMethod.parameters,
-      compareParameter,
-      true
-    ),
-    compareValue("Return Type", oldMethod.returnType, newMethod.returnType)
+  return compareFunction(oldMethod, newMethod, [
+    compareValue("Visibility", oldMethod.visibility, newMethod.visibility)
+  ]);
+}
+
+export function compareField(
+  oldField: FieldDetails,
+  newField: FieldDetails
+): CompareResult {
+  return prepareResult(oldField.name, MessageType.Changed, [
+    compareValue("Type", oldField.type, newField.type),
+    compareValue("Value", oldField.value, newField.value),
+    compareValue("Visibility", oldField.visibility, newField.visibility),
+    compareValue("Read Only", oldField.isReadOnly, newField.isReadOnly)
+  ]);
+}
+
+export function compareVariable(
+  oldVariable: ModuleVariableDetails,
+  newVariable: ModuleVariableDetails
+): CompareResult {
+  return prepareResult(oldVariable.name, MessageType.Changed, [
+    compareValue("Type", oldVariable.type, newVariable.type),
+    compareValue("Value", oldVariable.value, newVariable.value),
+    compareValue("Exported", oldVariable.isExported, newVariable.isExported),
+    compareValue("Constant", oldVariable.isConst, newVariable.isConst)
   ]);
 }
 
@@ -218,12 +310,50 @@ export function compareClass(
   newClass: ClassDetails
 ): CompareResult {
   return prepareResult(oldClass.name, MessageType.Changed, [
+    compareValue("Exported", oldClass.isExported, newClass.isExported),
+    compareValue("Base Class", oldClass.baseClass, newClass.baseClass),
+    compareStrings("Interfaces", oldClass.interfaces, newClass.interfaces),
     compareItems(
       "Methods",
       MessageType.Outline,
       oldClass.methods,
       newClass.methods,
       compareMethod
+    ),
+    compareItems(
+      "Fields",
+      MessageType.Outline,
+      oldClass.fields,
+      newClass.fields,
+      compareField
+    )
+  ]);
+}
+
+export function compareInterface(
+  oldInterface: InterfaceDetails,
+  newInterface: InterfaceDetails
+): CompareResult {
+  return prepareResult(oldInterface.name, MessageType.Changed, [
+    compareValue("Exported", oldInterface.isExported, newInterface.isExported),
+    compareStrings(
+      "Base Interfaces",
+      oldInterface.interfaces,
+      newInterface.interfaces
+    ),
+    compareItems(
+      "Methods",
+      MessageType.Outline,
+      oldInterface.methods,
+      newInterface.methods,
+      compareMethod
+    ),
+    compareItems(
+      "Fields",
+      MessageType.Outline,
+      oldInterface.fields,
+      newInterface.fields,
+      compareField
     )
   ]);
 }
@@ -246,6 +376,27 @@ export function compareFile(
       oldSource.classes,
       newSource.classes,
       compareClass
+    ),
+    compareItems(
+      "Interfaces",
+      MessageType.Outline,
+      oldSource.interfaces,
+      newSource.interfaces,
+      compareInterface
+    ),
+    compareItems(
+      "Functions",
+      MessageType.Outline,
+      oldSource.functions,
+      newSource.functions,
+      compareFunction
+    ),
+    compareItems(
+      "Variables",
+      MessageType.Outline,
+      oldSource.variables,
+      newSource.variables,
+      compareVariable
     )
   ]);
 }

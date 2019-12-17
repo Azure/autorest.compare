@@ -277,6 +277,6 @@ ${nextResult.outputFiles.map(f => "    " + f).join("\n")}`);
 }
 
 main().catch(err => {
-  console.error("\nAn error occurred during execution:\n\n", err.toString());
+  console.error("\nAn error occurred during execution:\n\n", err);
   process.exit(1);
 });

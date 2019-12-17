@@ -9,7 +9,13 @@ class SomeClass {
     const booString = "boo";
     return booString;
   }
+
   reorderedParams(firstParam: string, secondParam: string): void {}
+  protected hasGenericParam<T>(genericParam: T): void {}
+}
+
+export function someFunction<T>(genericParam: T): string {
+  return "test";
 }
 
 interface SomeInterface {}

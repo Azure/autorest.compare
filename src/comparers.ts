@@ -24,7 +24,7 @@ export interface NamedItem {
  * An item with an order identifier.  This is used when an item should have
  * its list order taken into consideration when being compared.
  */
-export interface OrderedItem {
+export interface OrderedItem extends NamedItem {
   ordinal: number;
 }
 
@@ -198,6 +198,24 @@ export function compareItems<TItem extends NamedItem>(
   }
 
   return prepareResult(resultMessage, messageType, messages);
+}
+
+/**
+ * Compares two arrays of strings using `compareItems` as the underlying
+ * algorithm.
+ */
+export function compareStrings(
+  resultMessage: string,
+  oldItems: string[] | undefined,
+  newItems: string[] | undefined
+): CompareResult {
+  return compareItems(
+    resultMessage,
+    MessageType.Outline,
+    (oldItems || []).map(name => ({ name })),
+    (newItems || []).map(name => ({ name })),
+    (o, n) => undefined
+  );
 }
 
 /**
