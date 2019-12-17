@@ -164,10 +164,6 @@ function isExported(node: Parser.SyntaxNode): boolean {
   return node.parent.type === "export_statement";
 }
 
-function extractImplements(implementsNode: Parser.SyntaxNode): string[] {
-  return implementsNode.namedChildren.map(c => c.text);
-}
-
 function extractImplements(node: Parser.SyntaxNode): string[] {
   const implementsNode: Parser.SyntaxNode = (node as any).namedChildren.find(
     n => n.type === "implements_clause"
