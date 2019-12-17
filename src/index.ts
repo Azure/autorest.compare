@@ -121,7 +121,7 @@ Run Arguments
     while (args.length > 0) {
       const [argName, argValue] = parseArgument(args.shift());
       if (argName === `compare-base`) {
-        if (argValue) {
+        if (argValue && argValue !== "true") {
           baseOutputDetails = {
             outputPath: argValue,
             useExisting: true
@@ -130,7 +130,7 @@ Run Arguments
           [baseCompareOptions, args] = getAutoRestOptionsFromArgs(args);
         }
       } else if (argName === `compare-next`) {
-        if (argValue) {
+        if (argValue && argValue !== "true") {
           nextOutputDetails = {
             outputPath: argValue,
             useExisting: true
@@ -171,7 +171,10 @@ Run Arguments
     }
 
     if (
-      (!baseOutputDetails.useExisting || !nextOutputDetails.useExisting) &&
+      (!baseOutputDetails ||
+        !baseOutputDetails.useExisting ||
+        !nextOutputDetails ||
+        !nextOutputDetails.useExisting) &&
       outputPath === undefined
     ) {
       throw new Error(
@@ -180,7 +183,12 @@ Run Arguments
     }
 
     let runs: CompareRun[] = [];
-    if (baseOutputDetails.useExisting && nextOutputDetails.useExisting) {
+    if (
+      baseOutputDetails &&
+      baseOutputDetails.useExisting &&
+      nextOutputDetails &&
+      nextOutputDetails.useExisting
+    ) {
       runs.push({
         baseOutput: baseOutputDetails,
         nextOutput: nextOutputDetails
@@ -202,6 +210,10 @@ Run Arguments
           useExisting: false
         }
       );
+    }
+
+    if (debug) {
+      console.log("*** Runs to be executed:\n\n", runs, "\n");
     }
 
     console.log(`*** Comparing output of ${language} generator...`);
