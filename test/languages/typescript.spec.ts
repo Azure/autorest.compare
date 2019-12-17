@@ -141,7 +141,26 @@ describe("TypeScript Parser", function() {
           isExported: true
         }
       ],
-      interfaces: [],
+      interfaces: [
+        {
+          name: "SomeInterface",
+          methods: [],
+          fields: [],
+          isExported: false
+        },
+        {
+          name: "BaseInterface",
+          methods: [],
+          fields: [],
+          isExported: false
+        },
+        {
+          name: "AnotherInterface",
+          methods: [],
+          fields: [],
+          isExported: true
+        }
+      ],
       types: [
         {
           name: "SomeUnion",

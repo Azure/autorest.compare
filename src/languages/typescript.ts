@@ -178,6 +178,20 @@ function extractClass(classNode: Parser.SyntaxNode): ClassDetails {
   };
 }
 
+function extractInterface(interfaceNode: Parser.SyntaxNode): InterfaceDetails {
+  const interfaceBody: Parser.SyntaxNode = (interfaceNode as any).bodyNode;
+  return {
+    name: (interfaceNode as any).nameNode.text,
+    methods: interfaceBody.namedChildren
+      .filter(n => n.type === "method_definition")
+      .map(extractMethod),
+    fields: interfaceBody.namedChildren
+      .filter(n => n.type === "public_field_definition")
+      .map(extractField),
+    isExported: isExported(interfaceNode)
+  };
+}
+
 function extractTypeAlias(typeAliasNode: Parser.SyntaxNode): TypeDetails {
   const typeNode = (typeAliasNode as any).valueNode;
 
@@ -220,7 +234,9 @@ export function extractSourceDetails(parseTree: Parser.Tree): SourceDetails {
     classes: parseTree.rootNode
       .descendantsOfType("class_declaration")
       .map(extractClass),
-    interfaces: [],
+    interfaces: parseTree.rootNode
+      .descendantsOfType("interface_declaration")
+      .map(extractInterface),
     types: parseTree.rootNode
       .descendantsOfType("type_alias_declaration")
       .map(extractTypeAlias),
@@ -238,7 +254,6 @@ export function compareParameter(
   oldParameter: ParameterDetails,
   newParameter: ParameterDetails
 ): CompareResult {
-  newParameter.isOptional;
   return prepareResult(oldParameter.name, MessageType.Changed, [
     compareValue("Type", oldParameter.type, newParameter.type),
     compareValue("Optional", oldParameter.isOptional, newParameter.isOptional)
