@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 import * as path from "path";
+import * as chalk from "chalk";
 import { compareOutputFiles } from "./comparers";
 import { compareFile as compareTypeScriptFile } from "./languages/typescript";
 import { printCompareMessage } from "./printer";
@@ -53,6 +54,7 @@ function getRunsFromSpecPaths(
 }
 
 async function main(): Promise<void> {
+  let changesDetected = false;
   let args = process.argv.slice(2);
   const languageArgsString = ["", ...AutoRestLanguages].join("\n  --");
 
@@ -216,13 +218,18 @@ Run Arguments
       console.log("*** Runs to be executed:\n\n", runs, "\n");
     }
 
-    console.log(`*** Comparing output of ${language} generator...`);
+    console.log(
+      `\nComparing output of the ${chalk.greenBright(language)} generator...\n`
+    );
 
     for (const run of runs) {
       if (run.fullSpecPath) {
-        console.log("*** Generating code for spec at path:", run.fullSpecPath);
+        console.log(
+          chalk.blueBright("Generating code for spec at path:"),
+          run.fullSpecPath
+        );
       } else {
-        console.log(`*** Comparing existing output in paths:
+        console.log(`${chalk.blueBright("Comparing existing output in paths:")}
     ${run.oldOutput.outputPath}
     ${run.newOutput.outputPath}`);
       }
@@ -266,7 +273,9 @@ ${oldResult.outputFiles.map(f => "    " + f).join("\n")}`);
 ${newResult.outputFiles.map(f => "    " + f).join("\n")}`);
       }
 
-      console.log("\n*** Generation complete, comparing results...");
+      console.log(
+        chalk.blueBright("\nGeneration complete, comparing results...")
+      );
 
       const compareResult = compareOutputFiles(oldResult, newResult, {
         comparersByType: {
@@ -275,16 +284,32 @@ ${newResult.outputFiles.map(f => "    " + f).join("\n")}`);
       });
 
       if (compareResult) {
-        console.log(""); // Space out the next section by one line
+        changesDetected = true;
+        console.log(
+          chalk.yellowBright(
+            "\nComparison complete, the following changes were detected:\n"
+          )
+        );
         printCompareMessage(compareResult);
         console.log(""); // Space out the next section by one line
-        process.exit(1);
+      } else {
+        console.log(
+          chalk.greenBright(
+            "\nComparison complete, no meaningful differences detected!\n"
+          )
+        );
       }
-
-      console.log(
-        "\nComparison complete, no meaningful differences detected!\n"
-      );
     }
+  }
+
+  if (changesDetected) {
+    // Return a non-zero exit code to signal failure to external tools
+    console.log(
+      chalk.yellowBright(
+        "\nComparison completed with changes detected.  Please view the output above for more details."
+      )
+    );
+    process.exit(1);
   }
 }
 
