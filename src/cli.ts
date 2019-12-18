@@ -28,7 +28,8 @@ export function getAutoRestOptionsFromArgs(
   args: string[]
 ): [AutoRestOptions, string[]] {
   const options: AutoRestOptions = {
-    useArgs: []
+    useArgs: [],
+    miscArgs: []
   };
 
   while (args.length > 0) {
@@ -44,6 +45,8 @@ export function getAutoRestOptionsFromArgs(
       options.useArgs.push(argValue);
     } else if (argName === "debug") {
       options.debug = argValue === "true";
+    } else {
+      options.miscArgs.push(arg);
     }
   }
 

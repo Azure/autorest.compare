@@ -18,6 +18,7 @@ export interface OutputDetails {
  */
 export interface AutoRestOptions {
   useArgs?: string[];
+  miscArgs?: string[];
   version?: string;
   debug?: boolean;
 }
@@ -114,7 +115,10 @@ async function spawnAutoRest(
       `--${language}.clear-output-folder`,
 
       // The path to the input spec
-      specPath,
+      path.extname(specPath) !== "" ? `--input-file="${specPath}"` : specPath,
+
+      // Any additional arguments
+      ...(options.miscArgs || []),
 
       // The --debug flag, if requested
       ...(options.debug ? ["--debug"] : [])
@@ -146,16 +150,16 @@ async function spawnAutoRest(
             }) exited with non-zero code:\n\n${errorOutput || normalOutput}`
           )
         );
+      } else {
+        const timeElapsed = Date.now() - startTime;
+
+        resolve({
+          ...getBaseResult(outputPath),
+          version: options.version,
+          processOutput: normalOutput,
+          timeElapsed
+        });
       }
-
-      const timeElapsed = Date.now() - startTime;
-
-      resolve({
-        ...getBaseResult(outputPath),
-        version: options.version,
-        processOutput: normalOutput,
-        timeElapsed
-      });
     });
   });
 }
