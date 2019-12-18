@@ -14,7 +14,7 @@ import { MessageType } from "../../src/comparers";
 describe("TypeScript Parser", function() {
   it("extracts semantic elements from source", function() {
     const parseTree = parseFile(
-      path.resolve(__dirname, "../artifacts/typescript/base/index.ts")
+      path.resolve(__dirname, "../artifacts/typescript/old/index.ts")
     );
     const sourceDetails: SourceDetails = extractSourceDetails(parseTree);
 
