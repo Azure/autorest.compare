@@ -10,7 +10,8 @@ import {
   compareValue,
   MessageType,
   OrderedItem,
-  compareStrings
+  compareStrings,
+  compareText
 } from "../comparers";
 
 const parser = new Parser();
@@ -43,6 +44,7 @@ export interface GenericTypeParameterDetails extends OrderedItem {}
 
 export interface FunctionDetails {
   name: string;
+  body: string;
   returnType: string;
   genericTypes: GenericTypeParameterDetails[];
   parameters: ParameterDetails[];
@@ -139,6 +141,7 @@ function extractFunction(functionNode: Parser.SyntaxNode): FunctionDetails {
 
   return {
     name: (functionNode as any).nameNode.text,
+    body: (functionNode as any).bodyNode.text,
     genericTypes: genericNodes
       ? genericNodes.namedChildren.map((p, i) => extractGenericParameter(p, i))
       : [],
@@ -314,7 +317,8 @@ export function compareFunction(
       true
     ),
     compareValue("Return Type", oldFunction.returnType, newFunction.returnType),
-    ...(extraResults || [])
+    ...(extraResults || []),
+    compareText("Body", oldFunction.body, newFunction.body)
   ]);
 }
 
@@ -333,7 +337,7 @@ export function compareField(
 ): CompareResult {
   return prepareResult(oldField.name, MessageType.Changed, [
     compareValue("Type", oldField.type, newField.type),
-    compareValue("Value", oldField.value, newField.value),
+    compareText("Value", oldField.value, newField.value),
     compareValue("Visibility", oldField.visibility, newField.visibility),
     compareValue("Read Only", oldField.isReadOnly, newField.isReadOnly)
   ]);
@@ -345,7 +349,7 @@ export function compareVariable(
 ): CompareResult {
   return prepareResult(oldVariable.name, MessageType.Changed, [
     compareValue("Type", oldVariable.type, newVariable.type),
-    compareValue("Value", oldVariable.value, newVariable.value),
+    compareText("Value", oldVariable.value, newVariable.value),
     compareValue("Exported", oldVariable.isExported, newVariable.isExported),
     compareValue("Constant", oldVariable.isConst, newVariable.isConst)
   ]);

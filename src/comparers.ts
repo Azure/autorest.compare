@@ -3,6 +3,7 @@
 
 import * as path from "path";
 import { AutoRestResult } from "./runner";
+import * as Diff from "diff";
 
 /**
  * A function which compares two items and returns a CompareResult.
@@ -45,6 +46,11 @@ export enum MessageType {
    * An outline message for organizational purposes.
    */
   Outline,
+
+  /**
+   * A plain string, used mainly for output messages.
+   */
+  Plain,
 
   /**
    * A message that indicates an item was added.
@@ -237,6 +243,70 @@ export function compareValue(
         ]
       }
     : undefined;
+}
+
+const maxPlainDiffLines = 5;
+function getDiffMessage(diffChange: Diff.Change): CompareMessage {
+  let message = diffChange.value;
+  let messageType = MessageType.Plain;
+
+  if (diffChange.added) {
+    messageType = MessageType.Added;
+  } else if (diffChange.removed) {
+    messageType = MessageType.Removed;
+  } else {
+    // Trim plain messages so that they don't take up too much space
+    let messageLines = message.split("\n");
+    if (messageLines.length > maxPlainDiffLines) {
+      message = `${messageLines
+        .slice(0, maxPlainDiffLines)
+        .join("\n")}\n... [trimmed for brevity] ...`;
+    }
+  }
+
+  return {
+    message,
+    type: messageType
+  };
+}
+
+/**
+ * Compares the textual contents of two strings and produces a line-by-line
+ * diff.
+ */
+export function compareText(
+  message: string,
+  oldString: string | undefined,
+  newString: string | undefined
+): CompareResult {
+  const wrapperMessage = {
+    message,
+    type: MessageType.Outline
+  };
+
+  if (oldString === undefined && newString === undefined) {
+    return undefined;
+  } else if (oldString === undefined || newString === undefined) {
+    return {
+      ...wrapperMessage,
+      children: [
+        {
+          message: oldString || newString,
+          type:
+            oldString === undefined ? MessageType.Added : MessageType.Removed
+        }
+      ]
+    };
+  } else {
+    const diff = Diff.diffLines(oldString, newString);
+    return diff.length > 0 &&
+      !(diff.length === 1 && diff[0].value.length === newString.length)
+      ? {
+          ...wrapperMessage,
+          children: diff.map(getDiffMessage)
+        }
+      : undefined;
+  }
 }
 
 /**

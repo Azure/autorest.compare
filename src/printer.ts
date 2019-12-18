@@ -25,11 +25,14 @@ function getMessageVisual(messageType: MessageType): MessageVisual {
       color = chalk.underline.whiteBright;
       prefixColor = chalk.whiteBright;
       break;
+    case MessageType.Plain:
+      prefix = " ";
+      color = chalk.whiteBright;
+      break;
     case MessageType.Changed:
       prefix = "~";
       color = chalk.yellowBright;
       break;
-
     default:
       // Default already handled
       break;
@@ -51,12 +54,15 @@ export function printCompareMessage(
 ): void {
   const { message, type: messageType, children } = compareMessage;
   const messageVisual = getMessageVisual(messageType);
+  const messageLines = message.trimRight().split("\n");
 
-  console.log(
-    `${"".padEnd(indentLevel * 2)}`,
-    messageVisual.prefixColor(messageVisual.prefix),
-    messageVisual.color(message)
-  );
+  messageLines.forEach(line => {
+    console.log(
+      `${"".padEnd(indentLevel * 2)}`,
+      messageVisual.prefixColor(messageVisual.prefix),
+      messageVisual.color(line)
+    );
+  });
 
   if (children) {
     const childIndent = indentLevel + 1;
