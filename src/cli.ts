@@ -36,7 +36,7 @@ export function getAutoRestOptionsFromArgs(
     const arg = args.shift();
     const [argName, argValue] = parseArgument(arg);
 
-    if (argName === "compare-base" || argName === "compare-next") {
+    if (argName === "compare-old" || argName === "compare-new") {
       args.unshift(arg);
       break;
     } else if (argName === "version") {
