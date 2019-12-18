@@ -21,8 +21,8 @@ export function someFunction<T>(genericParam: T): string {
 interface SomeInterface {}
 interface BaseInterface {}
 export interface AnotherInterface extends BaseInterface {}
-class BaseClass {}
 
+class BaseClass {}
 export class ExportedClass extends BaseClass
   implements SomeInterface, AnotherInterface {}
 
