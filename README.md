@@ -72,21 +72,26 @@ wish to use.  Specific usage scenarios are described in the following sections.
 
   ```shell
   autorest-compare --python --spec-path path/to/spec.json \
-    --output-path path/to/output
-    --compare-base --beta --use:@autorest/modelerfour@4.1.59 \
-    --compare-next --beta --use:@autorest/modelerfour@4.1.60
+    --output-path path/to/output \
+    --compare-old --use:@autorest/modelerfour@4.1.59 \
+    --compare-new --use:@autorest/modelerfour@4.1.60
   ```
 
-* Comparing the TypeScript output of generating all of the specs in the
-  `azure-rest-api-specs` repository between AutoRest v2 and AutoRest v3
-  (/beware/, this takes a while):
+* Comparing the TypeScript output of generating a set of specs in the
+  `azure-rest-api-specs` repository between AutoRest v2 and AutoRest v3:
 
   ```shell
-  autorest-compare --typescript --use-azure-specs \
-    --output-path path/to/output
-    --compare-base \
-    --compare-next --beta
+  autorest-compare --typescript \
+    --spec-root-path:../path/to/azure-rest-api-specs/specifications \
+    --spec-path:redis/resource-manager \
+    --spec-path:keyvault/resource-manager \
+    --output-path path/to/output \
+    --compare-old --version:^2.0.0 \
+    --compare-new --version:3.0.6179
   ```
+
+  Note that the `--spec-path` parameter can be passed multiple times to include
+  multiple specs in a single run.
 
 ## How it Works
 

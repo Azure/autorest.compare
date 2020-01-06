@@ -14,7 +14,7 @@ import { MessageType } from "../../src/comparers";
 describe("TypeScript Parser", function() {
   it("extracts semantic elements from source", function() {
     const parseTree = parseFile(
-      path.resolve(__dirname, "../artifacts/typescript/base/index.ts")
+      path.resolve(__dirname, "../artifacts/typescript/old/index.ts")
     );
     const sourceDetails: SourceDetails = extractSourceDetails(parseTree);
 
@@ -26,6 +26,7 @@ describe("TypeScript Parser", function() {
           methods: [
             {
               name: "removedMethod",
+              body: "{}",
               returnType: "void",
               visibility: "public",
               genericTypes: [],
@@ -40,6 +41,7 @@ describe("TypeScript Parser", function() {
             },
             {
               name: "changedParamType",
+              body: "{}",
               returnType: "void",
               visibility: "public",
               genericTypes: [],
@@ -54,6 +56,8 @@ describe("TypeScript Parser", function() {
             },
             {
               name: "changedReturnType",
+              body:
+                '{\n    const booString = "boo";\n    return booString;\n  }',
               returnType: "string",
               visibility: "public",
               genericTypes: [],
@@ -68,6 +72,7 @@ describe("TypeScript Parser", function() {
             },
             {
               name: "reorderedParams",
+              body: "{}",
               returnType: "void",
               visibility: "public",
               genericTypes: [],
@@ -88,6 +93,7 @@ describe("TypeScript Parser", function() {
             },
             {
               name: "hasGenericParam",
+              body: "{}",
               visibility: "protected",
               returnType: "void",
               genericTypes: [
@@ -175,13 +181,14 @@ describe("TypeScript Parser", function() {
       ],
       functions: [
         {
+          name: "someFunction",
+          body: '{\n  return "test";\n}',
           genericTypes: [
             {
               name: "T",
               ordinal: 0
             }
           ],
-          name: "someFunction",
           parameters: [
             {
               name: "genericParam",
