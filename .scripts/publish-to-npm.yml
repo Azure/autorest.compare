@@ -3,8 +3,8 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
-trigger:
-- master
+# This is a manual pipeline, don't trigger automatically
+trigger: none
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -23,3 +23,8 @@ steps:
     npm install
     npm run build
   displayName: 'npm install and build'
+
+- script: |
+    echo "//registry.npmjs.org/:_authToken=$(azure-sdk-npm-token)" > ./.npmrc
+    npm publish
+  displayName: 'Publish to npm'
