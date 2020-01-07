@@ -26,5 +26,5 @@ steps:
 
 - script: |
     echo "//registry.npmjs.org/:_authToken=$(azure-sdk-npm-token)" > ./.npmrc
-    npm publish
+    npm publish --access public
   displayName: 'Publish to npm'
