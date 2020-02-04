@@ -8,6 +8,7 @@ import { RunConfiguration, LanguageConfiguration } from "./config";
 import { runAutoRest, AutoRestResult, getBaseResult } from "./runner";
 import { compareOutputFiles, CompareResult } from "./comparers";
 import { compareFile as compareTypeScriptFile } from "./languages/typescript";
+import { compareFile as comparePythonFile } from "./languages/python";
 import { printCompareMessage } from "./printer";
 
 export abstract class Operation {
@@ -92,7 +93,8 @@ export class CompareOperation extends Operation {
 
     const compareResult = compareOutputFiles(oldResult, newResult, {
       comparersByType: {
-        ts: compareTypeScriptFile
+        ts: compareTypeScriptFile,
+        py: comparePythonFile
       }
     });
 

@@ -50,8 +50,8 @@ export type AutoRestLanguage =
  * A list of the names of all supported AutoRest language generators.
  */
 export const AutoRestLanguages: AutoRestLanguage[] = [
-  "typescript"
-  // "python",
+  "typescript",
+  "python"
   // "java",
   // "csharp",
   // "powershell",
