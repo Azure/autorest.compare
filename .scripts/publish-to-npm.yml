@@ -5,6 +5,7 @@
 
 # This is a manual pipeline, don't trigger automatically
 trigger: none
+pr: none
 
 pool:
   vmImage: 'ubuntu-latest'
