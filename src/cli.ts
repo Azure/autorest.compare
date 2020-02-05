@@ -61,7 +61,7 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
   function warnIfConfigFileUsed(argName: string): boolean {
     if (configPath !== undefined) {
       console.log(
-        chalk.white(
+        chalk.gray(
           `Skipping argument '${argName}' and using value from ${configPath}`
         )
       );

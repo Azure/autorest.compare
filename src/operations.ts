@@ -178,7 +178,7 @@ export async function runOperation(
       for (const specPath of specConfig.specPaths) {
         const fullSpecPath = path.resolve(specConfig.specRootPath, specPath);
         if (excludedSpecs.has(specPath)) {
-          console.log(chalk.white(`Skipping excluded spec: ${fullSpecPath}`));
+          console.log(chalk.gray(`Skipping excluded spec: ${fullSpecPath}`));
           continue;
         }
 
