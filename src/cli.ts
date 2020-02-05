@@ -93,12 +93,14 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
   while (args.length > 0) {
     const [argName, argValue] = parseArgument(args.shift());
     if (argName === "compare") {
-      if (!fs.existsSync(argValue)) {
-        throw new Error(`Configuration file does not exist: ${argValue}`);
-      }
+      if (argValue !== "true") {
+        if (!fs.existsSync(argValue)) {
+          throw new Error(`Configuration file does not exist: ${argValue}`);
+        }
 
-      configPath = argValue;
-      runConfig = loadConfiguration(configPath);
+        configPath = argValue;
+        runConfig = loadConfiguration(configPath);
+      }
     } else if (argName === "old-args") {
       if (!warnIfConfigFileUsed("old-args")) {
         [languageConfig.oldArgs, args] = getAutoRestArgs(args);
@@ -207,6 +209,12 @@ function getBaselineConfiguration(args: string[]): RunConfiguration {
     const arg = args.shift();
     const [argName, argValue] = parseArgument(arg);
     if (argName === "generate-baseline") {
+      if (argValue === "true") {
+        throw new Error(
+          "A configuration file must be specified: --generate-baseline:path-to-config.yaml"
+        );
+      }
+
       if (!fs.existsSync(argValue)) {
         throw new Error(`Configuration file does not exist: ${argValue}`);
       }
