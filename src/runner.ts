@@ -50,19 +50,19 @@ export type AutoRestLanguage =
  * A list of the names of all supported AutoRest language generators.
  */
 export const AutoRestLanguages: AutoRestLanguage[] = [
-  "typescript",
-  "python",
-  "java",
-  "csharp",
-  "powershell",
-  "go"
+  "typescript"
+  // "python",
+  // "java",
+  // "csharp",
+  // "powershell",
+  // "go"
 ];
 
 /**
  * Gets the base AutoRestResult by gathering the output files under the
  * given outputPath.
  */
-function getBaseResult(outputPath: string): AutoRestResult {
+export function getBaseResult(outputPath: string): AutoRestResult {
   return {
     outputPath,
     outputFiles: getPathsRecursively(outputPath).map(p =>

@@ -22,6 +22,8 @@ export interface SpecConfiguration {
   specPaths: string[];
 }
 
+export type UseExistingOutput = "none" | "old" | "all";
+
 /**
  * Defines configuration for runs of a particular language generator.
  */
@@ -58,11 +60,11 @@ export interface LanguageConfiguration {
 
   /**
    * Determines whether existing output for the baseline should be used.
-   * Defaults to "old" (baseline). "all" will cause existing output to be
-   * used for old and new runs, "none" will force old and new output to be
-   * regenerated.
+   * Defaults to "none" which forces old and new output to be regenerated.
+   * "all" will cause existing output to be used for old and new runs, "old"
+   * reuse the existing old (baseline) output.
    */
-  useExistingOutput?: "none" | "old" | "all";
+  useExistingOutput?: UseExistingOutput;
 }
 
 /**

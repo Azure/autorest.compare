@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import * as fs from "fs";
 import * as path from "path";
 import * as chalk from "chalk";
 import { RunConfiguration, LanguageConfiguration } from "./config";
-import { runAutoRest, AutoRestResult } from "./runner";
+import { runAutoRest, AutoRestResult, getBaseResult } from "./runner";
 import { compareOutputFiles, CompareResult } from "./comparers";
 import { compareFile as compareTypeScriptFile } from "./languages/typescript";
 import { printCompareMessage } from "./printer";
@@ -29,24 +30,47 @@ export class CompareOperation extends Operation {
     specPath: string,
     debug: boolean
   ): Promise<void> {
-    // TODO: Check for existing output
     const oldOutputPath = path.resolve(languageConfig.outputPath, "old");
     const newOutputPath = path.resolve(languageConfig.outputPath, "new");
 
-    // Run two instances of AutoRest simultaneously
-    const oldRunPromise = runAutoRest(
-      languageConfig.language,
-      specPath,
-      oldOutputPath,
-      languageConfig.oldArgs
-    );
+    console.log("Comparing output for spec:", chalk.yellowBright(specPath));
 
-    const newRunPromise = runAutoRest(
-      languageConfig.language,
-      specPath,
-      newOutputPath,
-      languageConfig.newArgs
-    );
+    // Run two instances of AutoRest simultaneously
+    let oldRunPromise: Promise<AutoRestResult>;
+    if (languageConfig.useExistingOutput === "none") {
+      oldRunPromise = runAutoRest(
+        languageConfig.language,
+        specPath,
+        oldOutputPath,
+        languageConfig.oldArgs
+      );
+    } else {
+      if (!fs.existsSync(oldOutputPath)) {
+        throw new Error(
+          `Expected output path does not exist: ${oldOutputPath}`
+        );
+      }
+
+      oldRunPromise = Promise.resolve(getBaseResult(oldOutputPath));
+    }
+
+    let newRunPromise: Promise<AutoRestResult>;
+    if (languageConfig.useExistingOutput !== "all") {
+      newRunPromise = runAutoRest(
+        languageConfig.language,
+        specPath,
+        newOutputPath,
+        languageConfig.newArgs
+      );
+    } else {
+      if (!fs.existsSync(newOutputPath)) {
+        throw new Error(
+          `Expected output path does not exist: ${newOutputPath}`
+        );
+      }
+
+      newRunPromise = Promise.resolve(getBaseResult(newOutputPath));
+    }
 
     const [oldResult, newResult] = await Promise.all([
       oldRunPromise,
@@ -54,12 +78,12 @@ export class CompareOperation extends Operation {
     ]);
 
     if (debug || languageConfig.oldArgs.indexOf("--debug") > -1) {
-      console.log("\n*** Old AutoRest Results:\n");
+      console.log("\n*** Old AutoRest Results:");
       printAutoRestResult(oldResult);
     }
 
     if (debug || languageConfig.newArgs.indexOf("--debug") > -1) {
-      console.log("\n*** New AutoRest Results:\n");
+      console.log("\n*** New AutoRest Results:");
       printAutoRestResult(newResult);
     }
 
@@ -137,7 +161,7 @@ function printAutoRestResult(runResult: AutoRestResult): void {
     console.log("\nAutoRest Output:\n");
     console.log(runResult.processOutput);
   }
-  console.log(`\nOutput files under ${runResult.outputPath}:
+  console.log(`Output files under ${runResult.outputPath}:
 ${runResult.outputFiles.map(f => "    " + f).join("\n")}`);
 }
 
@@ -153,7 +177,7 @@ export async function runOperation(
       for (const specPath of specConfig.specPaths) {
         const fullSpecPath = path.resolve(specConfig.specRootPath, specPath);
 
-        const result = await operation.runForSpec(
+        await operation.runForSpec(
           {
             ...languageConfig,
             outputPath: path.resolve(languageConfig.outputPath, specPath)
