@@ -1,6 +1,6 @@
 {
   "name": "@autorest/compare",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Compares the output between two AutoRest runs to check for material differences.",
   "main": "dist/index.js",
   "bin": {
