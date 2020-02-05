@@ -170,12 +170,17 @@ export async function runOperation(
   runConfig: RunConfiguration
 ): Promise<number> {
   for (const languageConfig of runConfig.languages) {
+    const excludedSpecs = new Set(languageConfig.excludeSpecs || []);
     console.log(
       `\n# Language Generator: ${chalk.greenBright(languageConfig.language)}\n`
     );
     for (const specConfig of runConfig.specs) {
       for (const specPath of specConfig.specPaths) {
         const fullSpecPath = path.resolve(specConfig.specRootPath, specPath);
+        if (excludedSpecs.has(specPath)) {
+          console.log(chalk.white(`Skipping excluded spec: ${fullSpecPath}`));
+          continue;
+        }
 
         await operation.runForSpec(
           {
