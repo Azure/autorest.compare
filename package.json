@@ -10,6 +10,7 @@
     "start": "ts-node src/index.ts",
     "test:unit": "ts-mocha -p tsconfig.json test/**/*.spec.ts",
     "test-run": "ts-node src/index.ts --typescript --spec-path:redis/resource-manager --spec-root-path:../azure-rest-api-specs/specification --output-path:generated/ --compare-base --version:^2.0.0 --compare-next --version:3.0.6170",
+    "test-generate": "ts-node src/index.ts --generate-baseline --typescript --spec-path:redis/resource-manager --spec-root-path:../azure-rest-api-specs/specification --output-path:generated/ --compare-base --version:^2.0.0 --compare-next --version:3.0.6170",
     "build": "tsc -p ."
   },
   "repository": {
@@ -25,8 +26,10 @@
   "dependencies": {
     "@autorest/autorest": "https://github.com/Azure/autorest/releases/download/autorest-3.0.6165/autorest-autorest-3.0.6165.tgz",
     "@types/diff": "^4.0.2",
+    "@types/js-yaml": "^3.12.2",
     "chalk": "^3.0.0",
     "diff": "^4.0.1",
+    "js-yaml": "^3.13.1",
     "tree-sitter": "^0.16.0",
     "tree-sitter-typescript": "^0.16.1"
   },

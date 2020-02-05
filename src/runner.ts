@@ -4,6 +4,7 @@
 import * as path from "path";
 import * as cp from "child_process";
 import { getPathsRecursively } from "./util";
+import { parseArgument } from "./cli";
 
 /**
  * Details for the output of an AutoRest run (pre-existing or not).
@@ -78,19 +79,8 @@ function getBaseResult(outputPath: string): AutoRestResult {
 export function runAutoRest(
   language: AutoRestLanguage,
   specPath: string,
-  outputDetails: OutputDetails,
-  options: AutoRestOptions
-): Promise<AutoRestResult> {
-  return outputDetails.useExisting
-    ? Promise.resolve(getBaseResult(outputDetails.outputPath))
-    : spawnAutoRest(language, specPath, outputDetails.outputPath, options);
-}
-
-async function spawnAutoRest(
-  language: AutoRestLanguage,
-  specPath: string,
   outputPath: string,
-  options: AutoRestOptions
+  autoRestArgs: string[]
 ): Promise<AutoRestResult> {
   return new Promise((resolve, reject) => {
     const autoRestCommand = path.resolve(
@@ -99,14 +89,8 @@ async function spawnAutoRest(
     );
 
     const args = [
-      // The AutoRest version, if specified
-      ...(options.version ? [`--version=${options.version}`] : []),
-
       // The language generator to use
       `--${language}`,
-
-      // The --use flags to pass along
-      ...(options.useArgs || []).map(useSpec => `--use=${useSpec}`),
 
       // The output-folder where generated files go
       `--${language}.output-folder=\"${outputPath}\"`,
@@ -118,13 +102,10 @@ async function spawnAutoRest(
       path.extname(specPath) !== "" ? `--input-file="${specPath}"` : specPath,
 
       // Any additional arguments
-      ...(options.miscArgs || []),
-
-      // The --debug flag, if requested
-      ...(options.debug ? ["--debug"] : [])
+      ...(autoRestArgs || [])
     ];
 
-    if (options.debug) {
+    if (autoRestArgs.indexOf("--debug") > -1) {
       console.log(`*** Invoking ${autoRestCommand} with args:`, args);
     }
 
@@ -141,13 +122,15 @@ async function spawnAutoRest(
       errorOutput += data.toString();
     });
 
+    let versionArg = autoRestArgs.find(arg => arg.startsWith("--version"));
+    let [_, version] = parseArgument(versionArg);
+
     autoRestProcess.on("exit", exitCode => {
       if (exitCode > 0) {
         reject(
           new Error(
-            `AutoRest (${
-              options.version
-            }) exited with non-zero code:\n\n${errorOutput || normalOutput}`
+            `AutoRest (${version}) exited with non-zero code:\n\n${errorOutput ||
+              normalOutput}`
           )
         );
       } else {
@@ -155,7 +138,7 @@ async function spawnAutoRest(
 
         resolve({
           ...getBaseResult(outputPath),
-          version: options.version,
+          version,
           processOutput: normalOutput,
           timeElapsed
         });

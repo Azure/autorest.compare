@@ -2,60 +2,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import * as path from "path";
-import * as chalk from "chalk";
-import { compareOutputFiles } from "./comparers";
-import { compareFile as compareTypeScriptFile } from "./languages/typescript";
-import { printCompareMessage } from "./printer";
-import { parseArgument, getAutoRestOptionsFromArgs } from "./cli";
-import {
-  runAutoRest,
-  OutputDetails,
-  AutoRestOptions,
-  AutoRestLanguage,
-  AutoRestLanguages
-} from "./runner";
-
-interface CompareRun {
-  fullSpecPath?: string;
-  oldOutput: OutputDetails;
-  newOutput: OutputDetails;
-}
-
-function getRunsFromSpecPaths(
-  specPaths: string[],
-  specRootPath: string | undefined,
-  oldOutput: OutputDetails,
-  newOutput: OutputDetails
-): CompareRun[] {
-  const runs: CompareRun[] = [];
-
-  for (const specPath of specPaths) {
-    const fullSpecPath = path.resolve(specRootPath || ".", specPath);
-    runs.push({
-      fullSpecPath,
-      oldOutput: {
-        ...oldOutput,
-        outputPath: path.join(
-          oldOutput.outputPath,
-          specRootPath ? specPath : ""
-        )
-      },
-      newOutput: {
-        ...newOutput,
-        outputPath: path.join(
-          newOutput.outputPath,
-          specRootPath ? specPath : ""
-        )
-      }
-    });
-  }
-
-  return runs;
-}
+import { runOperation } from "./operations";
+import { AutoRestLanguages } from "./runner";
+import { getOperationFromArgs } from "./cli";
 
 async function main(): Promise<void> {
-  let changesDetected = false;
   let args = process.argv.slice(2);
   const languageArgsString = ["", ...AutoRestLanguages].join("\n  --");
 
@@ -63,7 +14,9 @@ async function main(): Promise<void> {
   if (args.length === 0 || args[0] === "--help") {
     console.log(
       `
-Usage: autorest-compare --language [spec arguments] --output-path=[generated output path] --compare-old [run arguments] --compare-new [run arguments]
+Usage: autorest-compare --compare --language:[language-name] [spec arguments] --output-path=[generated output path] --old-args [AutoRest arguments] --new-args [AutoRest arguments]
+       autorest-compare --compare:config.yaml [--language:language-name] [--use-baseline]
+       autorest-compare --generate-baseline:config.yaml [--language:language-name]
 
 Language Arguments
 ${languageArgsString}
@@ -85,7 +38,7 @@ Output Arguments
 
 Comparison Arguments
 
-  --compare-old[:path] [run arguments]         Indicates that what follows are arguments for the old of the comparison.
+  --old-args[:path] [run arguments]            Indicates that what follows are arguments for the old of the comparison.
 
                                                You may also pass a path to an existing folder of output from a previous
                                                AutoRest run: --compare-old:path/to/existing/output.  If a --spec-root-path
@@ -99,218 +52,13 @@ Comparison Arguments
   --compare-new [run arguments]                Indicates that what follows are arguments for the new/new result for
                                                the comparison.
 
-Run Arguments
-
-  --use:<package@version>                      Use a specific AutoRest core, language, or extension package
-  --debug                                      Write debug output for the AutoRest run (can be used globally or within
-                                               the arguments of a specific comparison)
-
 `.trimLeft()
     );
   } else {
-    let debug = false;
-    const specPaths = [];
-    let outputPath: string | undefined;
-    let specRootPath: string | undefined;
+    const [operation, runConfig] = getOperationFromArgs(args);
+    await runOperation(operation, runConfig);
 
-    // Build configuration from arguments
-    let language: AutoRestLanguage | undefined;
-    let oldCompareOptions: AutoRestOptions = {};
-    let newCompareOptions: AutoRestOptions = {};
-
-    let oldOutputDetails: OutputDetails | undefined;
-    let newOutputDetails: OutputDetails | undefined;
-
-    while (args.length > 0) {
-      const [argName, argValue] = parseArgument(args.shift());
-      if (argName === `compare-old`) {
-        if (argValue && argValue !== "true") {
-          oldOutputDetails = {
-            outputPath: argValue,
-            useExisting: true
-          };
-        } else {
-          [oldCompareOptions, args] = getAutoRestOptionsFromArgs(args);
-        }
-      } else if (argName === `compare-new`) {
-        if (argValue && argValue !== "true") {
-          newOutputDetails = {
-            outputPath: argValue,
-            useExisting: true
-          };
-        } else {
-          [newCompareOptions, args] = getAutoRestOptionsFromArgs(args);
-        }
-      } else if (argName === `spec-path`) {
-        specPaths.push(argValue);
-      } else if (argName === `spec-root-path`) {
-        specRootPath = argValue;
-      } else if (argName === `output-path`) {
-        outputPath = argValue;
-      } else if (argName === "debug") {
-        debug = argValue === "true";
-      } else if (AutoRestLanguages.indexOf(argName as AutoRestLanguage) > -1) {
-        language = argName as AutoRestLanguage;
-      }
-    }
-
-    // Override debug flags if --debug was set globally
-    oldCompareOptions = {
-      ...oldCompareOptions,
-      debug: oldCompareOptions.debug || debug
-    };
-    newCompareOptions = {
-      ...newCompareOptions,
-      debug: newCompareOptions.debug || debug
-    };
-
-    if (language === undefined) {
-      throw new Error(
-        `Missing language parameter.  Please use one of the following:\n${[
-          "",
-          ...AutoRestLanguages
-        ].join("\n    --")}\n`
-      );
-    }
-
-    if (
-      (!oldOutputDetails ||
-        !oldOutputDetails.useExisting ||
-        !newOutputDetails ||
-        !newOutputDetails.useExisting) &&
-      outputPath === undefined
-    ) {
-      throw new Error(
-        "An output path must be provided with the --output-path parameter."
-      );
-    }
-
-    let runs: CompareRun[] = [];
-    if (
-      oldOutputDetails &&
-      oldOutputDetails.useExisting &&
-      newOutputDetails &&
-      newOutputDetails.useExisting
-    ) {
-      runs.push({
-        oldOutput: oldOutputDetails,
-        newOutput: newOutputDetails
-      });
-    } else if (specPaths.length === 0) {
-      throw new Error(
-        "A spec path must be provided with the --spec-path parameter."
-      );
-    } else {
-      runs = getRunsFromSpecPaths(
-        specPaths,
-        specRootPath,
-        oldOutputDetails || {
-          outputPath: path.resolve(outputPath, "old"),
-          useExisting: false
-        },
-        newOutputDetails || {
-          outputPath: path.resolve(outputPath, "new"),
-          useExisting: false
-        }
-      );
-    }
-
-    if (debug) {
-      console.log("*** Runs to be executed:\n\n", runs, "\n");
-    }
-
-    console.log(
-      `\nComparing output of the ${chalk.greenBright(language)} generator...\n`
-    );
-
-    for (const run of runs) {
-      if (run.fullSpecPath) {
-        console.log(
-          chalk.blueBright("Generating code for spec at path:"),
-          run.fullSpecPath
-        );
-      } else {
-        console.log(`${chalk.blueBright("Comparing existing output in paths:")}
-    ${run.oldOutput.outputPath}
-    ${run.newOutput.outputPath}`);
-      }
-
-      // Run two instances of AutoRest simultaneously
-      const oldRunPromise = runAutoRest(
-        language,
-        run.fullSpecPath || "",
-        run.oldOutput,
-        oldCompareOptions
-      );
-
-      const newRunPromise = runAutoRest(
-        language,
-        run.fullSpecPath || "",
-        run.newOutput,
-        newCompareOptions
-      );
-
-      const [oldResult, newResult] = await Promise.all([
-        oldRunPromise,
-        newRunPromise
-      ]);
-
-      if (oldCompareOptions.debug) {
-        if (oldResult.processOutput) {
-          console.log("\n*** Old AutoRest Output:\n");
-          console.log(oldResult.processOutput);
-        }
-        console.log(`\n*** Output files under ${oldResult.outputPath}:
-${oldResult.outputFiles.map(f => "    " + f).join("\n")}`);
-      }
-
-      if (newCompareOptions.debug) {
-        if (newResult.processOutput) {
-          console.log("\n*** New AutoRest Output:\n");
-          console.log(newResult.processOutput);
-        }
-
-        console.log(`\n*** Output files under ${newResult.outputPath}:
-${newResult.outputFiles.map(f => "    " + f).join("\n")}`);
-      }
-
-      console.log(
-        chalk.blueBright("\nGeneration complete, comparing results...")
-      );
-
-      const compareResult = compareOutputFiles(oldResult, newResult, {
-        comparersByType: {
-          ts: compareTypeScriptFile
-        }
-      });
-
-      if (compareResult) {
-        changesDetected = true;
-        console.log(
-          chalk.yellowBright(
-            "\nComparison complete, the following changes were detected:\n"
-          )
-        );
-        printCompareMessage(compareResult);
-        console.log(""); // Space out the next section by one line
-      } else {
-        console.log(
-          chalk.greenBright(
-            "\nComparison complete, no meaningful differences detected!\n"
-          )
-        );
-      }
-    }
-  }
-
-  if (changesDetected) {
-    // Return a non-zero exit code to signal failure to external tools
-    console.log(
-      chalk.yellowBright(
-        "\nComparison completed with changes detected.  Please view the output above for more details."
-      )
-    );
-    process.exit(1);
+    process.exit(operation.getExitCode());
   }
 }
 

@@ -1,0 +1,169 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+import * as path from "path";
+import * as chalk from "chalk";
+import { RunConfiguration, LanguageConfiguration } from "./config";
+import { runAutoRest, AutoRestResult } from "./runner";
+import { compareOutputFiles, CompareResult } from "./comparers";
+import { compareFile as compareTypeScriptFile } from "./languages/typescript";
+import { printCompareMessage } from "./printer";
+
+export abstract class Operation {
+  abstract runForSpec(
+    languageConfig: LanguageConfiguration,
+    specPath: string,
+    debug: boolean
+  ): Promise<void>;
+
+  abstract printSummary(): void;
+
+  abstract getExitCode(): number;
+}
+
+export class CompareOperation extends Operation {
+  private results: CompareResult[] = [];
+
+  async runForSpec(
+    languageConfig: LanguageConfiguration,
+    specPath: string,
+    debug: boolean
+  ): Promise<void> {
+    // TODO: Check for existing output
+    const oldOutputPath = path.resolve(languageConfig.outputPath, "old");
+    const newOutputPath = path.resolve(languageConfig.outputPath, "new");
+
+    // Run two instances of AutoRest simultaneously
+    const oldRunPromise = runAutoRest(
+      languageConfig.language,
+      specPath,
+      oldOutputPath,
+      languageConfig.oldArgs
+    );
+
+    const newRunPromise = runAutoRest(
+      languageConfig.language,
+      specPath,
+      newOutputPath,
+      languageConfig.newArgs
+    );
+
+    const [oldResult, newResult] = await Promise.all([
+      oldRunPromise,
+      newRunPromise
+    ]);
+
+    if (debug || languageConfig.oldArgs.indexOf("--debug") > -1) {
+      console.log("\n*** Old AutoRest Results:\n");
+      printAutoRestResult(oldResult);
+    }
+
+    if (debug || languageConfig.newArgs.indexOf("--debug") > -1) {
+      console.log("\n*** New AutoRest Results:\n");
+      printAutoRestResult(newResult);
+    }
+
+    const compareResult = compareOutputFiles(oldResult, newResult, {
+      comparersByType: {
+        ts: compareTypeScriptFile
+      }
+    });
+
+    if (compareResult) {
+      this.results.push(compareResult);
+
+      console.log(
+        chalk.yellowBright("\nThe following changes were detected:\n")
+      );
+      printCompareMessage(compareResult);
+      console.log(""); // Space out the next section by one line
+    }
+  }
+
+  printSummary() {
+    // Return a non-zero exit code to signal failure to external tools
+    console.log(
+      chalk.yellowBright(
+        "\nComparison completed with changes detected.  Please view the output above for more details."
+      )
+    );
+
+    // TODO: Print rest of summary
+  }
+
+  getExitCode() {
+    return this.results.length;
+  }
+}
+
+export class BaselineOperation extends Operation {
+  async runForSpec(
+    languageConfig: LanguageConfiguration,
+    specPath: string,
+    debug: boolean
+  ): Promise<void> {
+    const oldOutputPath = path.resolve(languageConfig.outputPath, "old");
+
+    console.log(
+      chalk.blueBright("-"),
+      specPath,
+      chalk.redBright("->"),
+      oldOutputPath
+    );
+
+    const runResult = await runAutoRest(
+      languageConfig.language,
+      specPath,
+      oldOutputPath,
+      languageConfig.oldArgs
+    );
+
+    if (debug) {
+      printAutoRestResult(runResult);
+    }
+  }
+
+  printSummary(): void {
+    console.log(chalk.blueBright("\nGeneration complete."));
+  }
+
+  getExitCode() {
+    return 0;
+  }
+}
+
+function printAutoRestResult(runResult: AutoRestResult): void {
+  if (runResult.processOutput) {
+    console.log("\nAutoRest Output:\n");
+    console.log(runResult.processOutput);
+  }
+  console.log(`\nOutput files under ${runResult.outputPath}:
+${runResult.outputFiles.map(f => "    " + f).join("\n")}`);
+}
+
+export async function runOperation(
+  operation: Operation,
+  runConfig: RunConfiguration
+): Promise<number> {
+  for (const languageConfig of runConfig.languages) {
+    console.log(
+      `\n# Language Generator: ${chalk.greenBright(languageConfig.language)}\n`
+    );
+    for (const specConfig of runConfig.specs) {
+      for (const specPath of specConfig.specPaths) {
+        const fullSpecPath = path.resolve(specConfig.specRootPath, specPath);
+
+        const result = await operation.runForSpec(
+          {
+            ...languageConfig,
+            outputPath: path.resolve(languageConfig.outputPath, specPath)
+          },
+          fullSpecPath,
+          runConfig.debug
+        );
+      }
+    }
+  }
+
+  return operation.getExitCode();
+}
