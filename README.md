@@ -71,23 +71,23 @@ wish to use.  Specific usage scenarios are described in the following sections.
 * Comparing the Python output between two versions of `@autorest/modelerfour`:
 
   ```shell
-  autorest-compare --python --spec-path path/to/spec.json \
+  autorest-compare --compare --language:python --spec-path path/to/spec.json \
     --output-path path/to/output \
-    --compare-old --use:@autorest/modelerfour@4.1.59 \
-    --compare-new --use:@autorest/modelerfour@4.1.60
+    --old-args --use:@autorest/modelerfour@4.1.59 \
+    --new-args --use:@autorest/modelerfour@4.1.60
   ```
 
 * Comparing the TypeScript output of generating a set of specs in the
   `azure-rest-api-specs` repository between AutoRest v2 and AutoRest v3:
 
   ```shell
-  autorest-compare --typescript \
+  autorest-compare --compare --language:typescript \
     --spec-root-path:../path/to/azure-rest-api-specs/specifications \
     --spec-path:redis/resource-manager \
     --spec-path:keyvault/resource-manager \
     --output-path path/to/output \
-    --compare-old --version:^2.0.0 \
-    --compare-new --version:3.0.6179
+    --old-args --version:^2.0.0 \
+    --new-args --version:3.0.6179
   ```
 
   Note that the `--spec-path` parameter can be passed multiple times to include
