@@ -8,49 +8,65 @@ import { getOperationFromArgs } from "./cli";
 
 async function main(): Promise<void> {
   let args = process.argv.slice(2);
-  const languageArgsString = ["", ...AutoRestLanguages].join("\n  --");
+  const languageArgsString = ["", ...AutoRestLanguages].join("\n                                               - ");
 
   // First, check for the --help parameter, or no parameters at all
   if (args.length === 0 || args[0] === "--help") {
     console.log(
       `
 Usage: autorest-compare --compare --language:[language-name] [spec arguments] --output-path=[generated output path] --old-args [AutoRest arguments] --new-args [AutoRest arguments]
-       autorest-compare --compare:config.yaml [--language:language-name] [--use-baseline]
+       autorest-compare --compare:config.yaml [--language:language-name] [--use-existing-output:<output type>]
        autorest-compare --generate-baseline:config.yaml [--language:language-name]
 
+Operation Arguments
+
+  --compare[:<config-file.yaml>]               Generates two sets of output from AutoRest driven by --old-args and
+                                               --new-args.  If no configuration file is specified, it is expected
+                                               that language, spec, and AutoRest arguments will be supplied.  If a
+                                               configuration file is specified, the --language parameter will select
+                                               a single language from the configuration file for comparison.
+
+  --generate-baseline:<config-file.yaml>       Generates the "old" output configuration for use as a baseline for future
+                                               --compare runs.  The --language parameter will select a single language
+                                               from the configuration file for comparison.
+
 Language Arguments
+
+  --language:<language name>                   Generate output using the specified language generator.  Supported values
+                                               are:
 ${languageArgsString}
 
 Spec Arguments
 
-  --spec-path:[path]                           Use the specified spec path for code generation.  Relative paths will
+  --spec-path:<path>                           Use the specified spec path for code generation.  Relative paths will
                                                be resolved against the value of --spec-root-path if specified.
                                                NOTE: This parameter can be used multiple times to specify more than
                                                one spec path.
-  --spec-root-path:[path]                      The root path from which all spec paths will be resolved.
+
+  --spec-root-path:<path>                      The root path from which all spec paths will be resolved.
 
 Output Arguments
 
-  --output-path:[generated output path]        The path where generated source files will be omitted.  This should
+  --output-path:<base generated output path>   The path where generated source files will be emitted.  This should
                                                generally be under a temporary file path.  When a --spec-root-path
                                                is provided, the path --spec-path relative to the --spec-root-path
                                                will be used as the subpath of the --output-path.
 
+  --use-existing-output:<output type>          For --compare operations, this argument determines whether existing output
+                                               folders will be used for the comparison.  Possible values:
+
+                                               - none: Regenerates both old and new output for the comparison
+                                               - old: Uses existing old output folder
+                                               - all: Uses existing folders for old and new output
+
+                                                
 Comparison Arguments
 
-  --old-args[:path] [run arguments]            Indicates that what follows are arguments for the old of the comparison.
+  --old-args <AutoRest arguments>              Indicates that what follows are arguments to AutoRest to generate the "old"
+                                               (baseline) output for comparison.
 
-                                               You may also pass a path to an existing folder of output from a previous
-                                               AutoRest run: --compare-old:path/to/existing/output.  If a --spec-root-path
-                                               is provided, it is expected that the existing output will be located
-                                               in a subpath equal to the relative path of a --spec-path parameter and
-                                               the --spec-root-path.
-
-                                               NOTE: When you use an existing output path, all following arguments for
-                                               --compare-old will be ignored.
-
-  --compare-new [run arguments]                Indicates that what follows are arguments for the new/new result for
-                                               the comparison.
+  --new-args <AutoRest arguments>              Indicates that what follows are arguments to AutoRest to generate the "new"
+                                               output for comparison.
 
 `.trimLeft()
     );
