@@ -92,58 +92,77 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
 
   while (args.length > 0) {
     const [argName, argValue] = parseArgument(args.shift());
-    if (argName === "compare") {
-      if (argValue !== "true") {
-        if (!fs.existsSync(argValue)) {
-          throw new Error(`Configuration file does not exist: ${argValue}`);
-        }
 
-        configPath = argValue;
-        runConfig = loadConfiguration(configPath);
-      }
-    } else if (argName === "old-args") {
-      if (!warnIfConfigFileUsed("old-args")) {
-        [languageConfig.oldArgs, args] = getAutoRestArgs(args);
-      }
-    } else if (argName === "new-args") {
-      if (!warnIfConfigFileUsed("new-args")) {
-        [languageConfig.newArgs, args] = getAutoRestArgs(args);
-      }
-    } else if (argName === "spec-path") {
-      if (!warnIfConfigFileUsed("spec-path")) {
-        specConfig.specPaths.push(argValue);
-      }
-    } else if (argName === "spec-root-path") {
-      if (!warnIfConfigFileUsed("spec-root-path")) {
-        specConfig.specRootPath = argValue;
-      }
-    } else if (argName === "output-path") {
-      if (!warnIfConfigFileUsed("output-path")) {
-        languageConfig.outputPath = argValue;
-      }
-    } else if (argName === "use-existing-output") {
-      if (argValue === "old" || argValue === "all" || argValue === "none") {
-        useExistingOutput = argValue;
-      } else {
-        throw new Error(
-          `Unexpected value for --use-existing-output: ${argValue}`
-        );
-      }
-    } else if (argName === "language") {
-      if (AutoRestLanguages.indexOf(argValue as AutoRestLanguage) > -1) {
-        languageToRun = argValue as AutoRestLanguage;
-        if (configPath === undefined) {
-          languageConfig.language = languageToRun;
+    switch (argName) {
+      case "compare":
+        if (argValue !== "true") {
+          if (!fs.existsSync(argValue)) {
+            throw new Error(`Configuration file does not exist: ${argValue}`);
+          }
+
+          configPath = argValue;
+          runConfig = loadConfiguration(configPath);
         }
-      } else {
-        throw new Error(
-          `Unexpected value for --language: ${argValue}.  Supported languages are: ${AutoRestLanguages.join(
-            ", "
-          )}.`
-        );
-      }
-    } else if (argName === "debug") {
-      runConfig.debug = argValue === "true";
+        break;
+
+      case "old-args":
+        if (!warnIfConfigFileUsed("old-args")) {
+          [languageConfig.oldArgs, args] = getAutoRestArgs(args);
+        }
+        break;
+
+      case "new-args":
+        if (!warnIfConfigFileUsed("new-args")) {
+          [languageConfig.newArgs, args] = getAutoRestArgs(args);
+        }
+        break;
+
+      case "spec-path":
+        if (!warnIfConfigFileUsed("spec-path")) {
+          specConfig.specPaths.push(argValue);
+        }
+        break;
+
+      case "spec-root-path":
+        if (!warnIfConfigFileUsed("spec-root-path")) {
+          specConfig.specRootPath = argValue;
+        }
+        break;
+
+      case "output-path":
+        if (!warnIfConfigFileUsed("output-path")) {
+          languageConfig.outputPath = argValue;
+        }
+        break;
+
+      case "use-existing-output":
+        if (argValue === "old" || argValue === "all" || argValue === "none") {
+          useExistingOutput = argValue;
+        } else {
+          throw new Error(
+            `Unexpected value for --use-existing-output: ${argValue}`
+          );
+        }
+        break;
+
+      case "language":
+        if (AutoRestLanguages.indexOf(argValue as AutoRestLanguage) > -1) {
+          languageToRun = argValue as AutoRestLanguage;
+          if (configPath === undefined) {
+            languageConfig.language = languageToRun;
+          }
+        } else {
+          throw new Error(
+            `Unexpected value for --language: ${argValue}.  Supported languages are: ${AutoRestLanguages.join(
+              ", "
+            )}.`
+          );
+        }
+        break;
+
+      case "debug":
+        runConfig.debug = argValue === "true";
+        break;
     }
   }
 
@@ -208,31 +227,37 @@ function getBaselineConfiguration(args: string[]): RunConfiguration {
   while (args.length > 0) {
     const arg = args.shift();
     const [argName, argValue] = parseArgument(arg);
-    if (argName === "generate-baseline") {
-      if (argValue === "true") {
-        throw new Error(
-          "A configuration file must be specified: --generate-baseline:path-to-config.yaml"
-        );
-      }
 
-      if (!fs.existsSync(argValue)) {
-        throw new Error(`Configuration file does not exist: ${argValue}`);
-      }
+    switch (argName) {
+      case "generate-baseline":
+        if (argValue === "true") {
+          throw new Error(
+            "A configuration file must be specified: --generate-baseline:path-to-config.yaml"
+          );
+        }
 
-      configPath = argValue;
-      runConfig = loadConfiguration(configPath);
-    } else if (argName === "language") {
-      if (AutoRestLanguages.indexOf(argValue as AutoRestLanguage) > -1) {
-        languageToRun = argValue as AutoRestLanguage;
-      } else {
-        throw new Error(
-          `Unexpected value for --language: ${argValue}.  Supported languages are: ${AutoRestLanguages.join(
-            ", "
-          )}.`
-        );
-      }
-    } else {
-      throw Error(`Unexpected argument: ${arg}`);
+        if (!fs.existsSync(argValue)) {
+          throw new Error(`Configuration file does not exist: ${argValue}`);
+        }
+
+        configPath = argValue;
+        runConfig = loadConfiguration(configPath);
+        break;
+
+      case "language":
+        if (AutoRestLanguages.indexOf(argValue as AutoRestLanguage) > -1) {
+          languageToRun = argValue as AutoRestLanguage;
+        } else {
+          throw new Error(
+            `Unexpected value for --language: ${argValue}.  Supported languages are: ${AutoRestLanguages.join(
+              ", "
+            )}.`
+          );
+        }
+        break;
+
+      default:
+        throw Error(`Unexpected argument: ${arg}`);
     }
   }
 
