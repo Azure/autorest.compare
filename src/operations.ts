@@ -37,7 +37,10 @@ export class CompareOperation extends Operation {
 
     // Run two instances of AutoRest simultaneously
     let oldRunPromise: Promise<AutoRestResult>;
-    if (languageConfig.useExistingOutput === "none") {
+    if (
+      languageConfig.useExistingOutput === undefined ||
+      languageConfig.useExistingOutput === "none"
+    ) {
       oldRunPromise = runAutoRest(
         languageConfig.language,
         specPath,
