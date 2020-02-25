@@ -123,7 +123,9 @@ export function runAutoRest(
     });
 
     let versionArg = autoRestArgs.find(arg => arg.startsWith("--version"));
-    let [_, version] = parseArgument(versionArg);
+    let [_, version] = versionArg
+      ? parseArgument(versionArg)
+      : [null, "unspecified"];
 
     autoRestProcess.on("exit", exitCode => {
       if (exitCode > 0) {

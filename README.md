@@ -71,8 +71,8 @@ wish to use.  Specific usage scenarios are described in the following sections.
 * Comparing the Python output between two versions of `@autorest/modelerfour`:
 
   ```shell
-  autorest-compare --compare --language:python --spec-path path/to/spec.json \
-    --output-path path/to/output \
+  autorest-compare --compare --language:python --spec-path:path/to/spec.json \
+    --output-path:path/to/output \
     --old-args --use:@autorest/modelerfour@4.1.59 \
     --new-args --use:@autorest/modelerfour@4.1.60
   ```
@@ -85,7 +85,7 @@ wish to use.  Specific usage scenarios are described in the following sections.
     --spec-root-path:../path/to/azure-rest-api-specs/specifications \
     --spec-path:redis/resource-manager \
     --spec-path:keyvault/resource-manager \
-    --output-path path/to/output \
+    --output-path:path/to/output \
     --old-args --version:^2.0.0 \
     --new-args --version:3.0.6179
   ```

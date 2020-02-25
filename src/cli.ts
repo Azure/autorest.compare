@@ -193,8 +193,11 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
     );
   }
 
-  // Resolve paths relative to configuration file
-  const fullConfigPath = path.dirname(path.resolve(configPath));
+  // Resolve paths relative to configuration file or the current directory
+  const fullConfigPath = configPath
+    ? path.dirname(path.resolve(configPath))
+    : process.cwd();
+
   runConfig = {
     ...runConfig,
     specs: runConfig.specs.map(resolveSpecRootPath(fullConfigPath)),

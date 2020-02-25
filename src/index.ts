@@ -59,7 +59,7 @@ Output Arguments
                                                - old: Uses existing old output folder
                                                - all: Uses existing folders for old and new output
 
-                                                
+
 Comparison Arguments
 
   --old-args <AutoRest arguments>              Indicates that what follows are arguments to AutoRest to generate the "old"
