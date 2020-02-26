@@ -131,8 +131,7 @@ export function runAutoRest(
       if (exitCode > 0) {
         reject(
           new Error(
-            `AutoRest (${version}) exited with non-zero code:\n\n${errorOutput ||
-              normalOutput}`
+            `AutoRest (${version}) exited with non-zero code:\n\n${errorOutput}\n\nCommand Output:\n\n${normalOutput}`
           )
         );
       } else {
