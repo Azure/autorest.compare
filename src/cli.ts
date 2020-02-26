@@ -168,8 +168,10 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
 
   // Add debug flags if --debug was set globally
   if (runConfig.debug) {
-    languageConfig.oldArgs.push("--debug");
-    languageConfig.newArgs.push("--debug");
+    for (let language of runConfig.languages) {
+      language.oldArgs.push("--debug");
+      language.newArgs.push("--debug");
+    }
   }
 
   if (configPath === undefined && languageConfig.language === undefined) {
