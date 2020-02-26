@@ -93,7 +93,7 @@ export function runAutoRest(
       `--${language}`,
 
       // The output-folder where generated files go
-      `--${language}.output-folder=\"${outputPath}\"`,
+      `--${language}.output-folder="${outputPath}"`,
 
       // Clear the output folder before generating
       `--${language}.clear-output-folder`,
