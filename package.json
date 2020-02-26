@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/Azure/autorest.compare#readme",
   "dependencies": {
-    "@autorest/autorest": "https://github.com/Azure/autorest/releases/download/autorest-3.0.6165/autorest-autorest-3.0.6165.tgz",
+    "@autorest/autorest": "https://github.com/Azure/autorest/releases/download/autorest-3.0.6194/autorest-autorest-3.0.6194.tgz",
     "@types/diff": "^4.0.2",
     "@types/js-yaml": "^3.12.2",
     "chalk": "^3.0.0",
