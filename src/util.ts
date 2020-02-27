@@ -9,6 +9,11 @@ import * as path from "path";
  */
 export function getPathsRecursively(folderPath: string): string[] {
   let filesInPath = [];
+
+  if (!fs.existsSync(folderPath)) {
+    return [];
+  }
+
   for (const childPath of fs.readdirSync(folderPath)) {
     const rootedPath = path.join(folderPath, childPath);
     if (fs.statSync(rootedPath).isDirectory()) {

@@ -168,8 +168,10 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
 
   // Add debug flags if --debug was set globally
   if (runConfig.debug) {
-    languageConfig.oldArgs.push("--debug");
-    languageConfig.newArgs.push("--debug");
+    for (let language of runConfig.languages) {
+      language.oldArgs.push("--debug");
+      language.newArgs.push("--debug");
+    }
   }
 
   if (configPath === undefined && languageConfig.language === undefined) {
@@ -193,8 +195,11 @@ function getCompareConfiguration(args: string[]): RunConfiguration {
     );
   }
 
-  // Resolve paths relative to configuration file
-  const fullConfigPath = path.dirname(path.resolve(configPath));
+  // Resolve paths relative to configuration file or the current directory
+  const fullConfigPath = configPath
+    ? path.dirname(path.resolve(configPath))
+    : process.cwd();
+
   runConfig = {
     ...runConfig,
     specs: runConfig.specs.map(resolveSpecRootPath(fullConfigPath)),

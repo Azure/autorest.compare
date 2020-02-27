@@ -50,8 +50,8 @@ export type AutoRestLanguage =
  * A list of the names of all supported AutoRest language generators.
  */
 export const AutoRestLanguages: AutoRestLanguage[] = [
-  "typescript"
-  // "python",
+  "typescript",
+  "python"
   // "java",
   // "csharp",
   // "powershell",
@@ -93,7 +93,7 @@ export function runAutoRest(
       `--${language}`,
 
       // The output-folder where generated files go
-      `--${language}.output-folder=\"${outputPath}\"`,
+      `--${language}.output-folder="${outputPath}"`,
 
       // Clear the output folder before generating
       `--${language}.clear-output-folder`,
@@ -123,14 +123,15 @@ export function runAutoRest(
     });
 
     let versionArg = autoRestArgs.find(arg => arg.startsWith("--version"));
-    let [_, version] = parseArgument(versionArg);
+    let [_, version] = versionArg
+      ? parseArgument(versionArg)
+      : [null, "unspecified"];
 
     autoRestProcess.on("exit", exitCode => {
       if (exitCode > 0) {
         reject(
           new Error(
-            `AutoRest (${version}) exited with non-zero code:\n\n${errorOutput ||
-              normalOutput}`
+            `AutoRest (${version}) exited with non-zero code:\n\n${errorOutput}\n\nCommand Output:\n\n${normalOutput}`
           )
         );
       } else {

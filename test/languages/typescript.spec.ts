@@ -5,7 +5,6 @@ import {
   extractSourceDetails,
   SourceDetails,
   compareClass,
-  compareInterface,
   compareParameter,
   compareMethod
 } from "../../src/languages/typescript";
