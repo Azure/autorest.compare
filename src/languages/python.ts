@@ -67,7 +67,7 @@ export function extractMethod(methodNode: Parser.SyntaxNode): MethodDetails {
 
   return {
     name: (methodNode as any).nameNode.text,
-    returnType: returnTypeNode ? returnTypeNode.text : "",
+    returnType: returnTypeNode ? returnTypeNode.text : undefined,
     body: bodyNode.text,
     parameters: parameterNodes.map(extractParameter)
   };
