@@ -92,8 +92,10 @@ export function runAutoRest(
       // The language generator to use
       `--${language}`,
 
-      // The output-folder where generated files go
-      `--${language}.output-folder="${outputPath}"`,
+      // The output-folder where generated files are written.  Specify both
+      // styles of option due to inconsistencies between generators.
+      `--output-folder="${outputPath}"`,
+      `--${language}.output-folder="$(output-folder)"`,
 
       // Clear the output folder before generating
       `--${language}.clear-output-folder`,
