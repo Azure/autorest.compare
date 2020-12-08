@@ -82,7 +82,7 @@ export interface RunConfiguration {
  */
 export function loadConfiguration(configPath: string): RunConfiguration {
   try {
-    return yaml.safeLoad(fs.readFileSync(configPath, "utf8"));
+    return yaml.safeLoad(fs.readFileSync(configPath, "utf8")) as RunConfiguration;
   } catch (e) {
     console.error(e);
   }
