@@ -193,7 +193,7 @@ const parser = new Parser();
 parser.setLanguage(Python);
 
 export function parseFile(filePath: string): Parser.Tree {
-  const contents = fs.readFileSync(filePath).toString();
+  const contents = fs.readFileSync(filePath).toString().replace(/\r\n/g, "\n");
   return parser.parse(contents);
 }
 
