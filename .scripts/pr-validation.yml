@@ -6,6 +6,9 @@
 trigger:
 - master
 
+pr:
+- master
+
 jobs:
   - job: linux
     displayName: Linux Build And Test
