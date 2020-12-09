@@ -4,26 +4,57 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 trigger:
-- master
+  - master
 
-pool:
-  vmImage: 'ubuntu-latest'
+pr:
+  - master
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '10.x'
-  displayName: 'Install Node.js'
+jobs:
+  - job: linux
+    displayName: Linux Build And Test
+    pool:
+      vmImage: "ubuntu-latest"
 
-- script: |
-    sudo apt-get install -y build-essential
-  displayName: 'Install native build tools'
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: "14.x"
+        displayName: "Install Node.js"
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+      - script: sudo apt-get install -y build-essential
+        displayName: "Install native build tools"
 
-- script: |
-    npm run test:unit
-  displayName: 'Run unit tests'
+      - script: npm install -g npm
+        displayName: "Update npm"
+
+      - script: npm ci
+        displayName: "npm install"
+
+      - script: npm run build
+        displayName: "Build"
+
+      - script: npm run test:unit
+        displayName: "Run unit tests"
+
+  - job: windows
+    displayName: Windows Build And Test
+    pool:
+      vmImage: "windows-latest"
+
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: "14.x"
+        displayName: "Install Node.js"
+
+      - script: npm install -g npm
+        displayName: "Update npm"
+
+      - script: npm ci
+        displayName: "npm install"
+
+      - script: npm run build
+        displayName: "Build"
+
+      - script: npm run test:unit
+        displayName: "Run unit tests"

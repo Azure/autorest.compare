@@ -5,6 +5,7 @@ import * as path from "path";
 import * as cp from "child_process";
 import { getPathsRecursively } from "./util";
 import { parseArgument } from "./cli";
+import * as os from "os";
 
 /**
  * Details for the output of an AutoRest run (pre-existing or not).
@@ -51,7 +52,7 @@ export type AutoRestLanguage =
  */
 export const AutoRestLanguages: AutoRestLanguage[] = [
   "typescript",
-  "python"
+  "python",
   // "java",
   // "csharp",
   // "powershell",
@@ -65,9 +66,9 @@ export const AutoRestLanguages: AutoRestLanguage[] = [
 export function getBaseResult(outputPath: string): AutoRestResult {
   return {
     outputPath,
-    outputFiles: getPathsRecursively(outputPath).map(p =>
+    outputFiles: getPathsRecursively(outputPath).map((p) =>
       path.relative(outputPath, p)
-    )
+    ),
   };
 }
 
@@ -83,10 +84,7 @@ export function runAutoRest(
   autoRestArgs: string[]
 ): Promise<AutoRestResult> {
   return new Promise((resolve, reject) => {
-    const autoRestCommand = path.resolve(
-      __dirname,
-      "../node_modules/.bin/autorest-beta"
-    );
+    const autoRestCommand = getAutoRestCmd();
 
     const args = [
       // The language generator to use
@@ -104,7 +102,7 @@ export function runAutoRest(
       path.extname(specPath) !== "" ? `--input-file="${specPath}"` : specPath,
 
       // Any additional arguments
-      ...(autoRestArgs || [])
+      ...(autoRestArgs || []),
     ];
 
     if (autoRestArgs.indexOf("--debug") > -1) {
@@ -112,24 +110,24 @@ export function runAutoRest(
     }
 
     const startTime = Date.now();
-    const autoRestProcess = cp.fork(autoRestCommand, args, { stdio: "pipe" });
+    const autoRestProcess = cp.spawn(autoRestCommand, args, { stdio: "pipe" });
 
     let normalOutput = "";
-    autoRestProcess.stdout.on("data", data => {
+    autoRestProcess.stdout.on("data", (data) => {
       normalOutput += data.toString();
     });
 
     let errorOutput = "";
-    autoRestProcess.stderr.on("data", data => {
+    autoRestProcess.stderr.on("data", (data) => {
       errorOutput += data.toString();
     });
 
-    let versionArg = autoRestArgs.find(arg => arg.startsWith("--version"));
+    let versionArg = autoRestArgs.find((arg) => arg.startsWith("--version"));
     let [_, version] = versionArg
       ? parseArgument(versionArg)
       : [null, "unspecified"];
 
-    autoRestProcess.on("exit", exitCode => {
+    autoRestProcess.on("exit", (exitCode) => {
       if (exitCode > 0) {
         reject(
           new Error(
@@ -143,9 +141,14 @@ export function runAutoRest(
           ...getBaseResult(outputPath),
           version,
           processOutput: normalOutput,
-          timeElapsed
+          timeElapsed,
         });
       }
     });
   });
 }
+
+const getAutoRestCmd = () => {
+  const exe = os.platform() == "win32" ? "autorest-beta.cmd" : "autorest-beta";
+  return path.resolve(__dirname, `../node_modules/.bin/${exe}`);
+};
