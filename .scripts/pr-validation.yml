@@ -24,6 +24,9 @@ jobs:
       - script: sudo apt-get install -y build-essential
         displayName: "Install native build tools"
 
+      - script: npm install -g npm
+        displayName: "Update npm"
+
       - script: npm install
         displayName: "npm install"
 
@@ -44,6 +47,9 @@ jobs:
           versionSpec: "14.x"
         displayName: "Install Node.js"
 
+      - script: npm install -g npm
+        displayName: "Update npm"
+        
       - script: npm install -g windows-build-tools
         displayName: "Install native build tools"
 
