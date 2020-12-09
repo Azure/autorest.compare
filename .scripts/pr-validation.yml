@@ -6,24 +6,51 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-latest'
+jobs:
+  - job: linux
+    displayName: Linux Build And Test
+    pool:
+      vmImage: 'ubuntu-latest'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '10.x'
-  displayName: 'Install Node.js'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '10.x'
+      displayName: 'Install Node.js'
 
-- script: |
-    sudo apt-get install -y build-essential
-  displayName: 'Install native build tools'
+    - script: |
+        sudo apt-get install -y build-essential
+      displayName: 'Install native build tools'
 
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+    - script: |
+        npm install
+        npm run build
+      displayName: 'npm install and build'
 
-- script: |
-    npm run test:unit
-  displayName: 'Run unit tests'
+    - script: |
+        npm run test:unit
+      displayName: 'Run unit tests'
+
+  - job: windows
+    displayName: Windows Build And Test
+    pool:
+      vmImage: 'windows-latest'
+
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '10.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        sudo apt-get install -y windows-build-tools
+      displayName: 'Install native build tools'
+
+    - script: |
+        npm install
+        npm run build
+      displayName: 'npm install and build'
+
+    - script: |
+        npm run test:unit
+      displayName: 'Run unit tests'
