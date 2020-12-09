@@ -50,9 +50,6 @@ jobs:
       - script: npm install -g npm
         displayName: "Update npm"
 
-      - script: npm install -g windows-build-tools
-        displayName: "Install native build tools"
-
       - script: npm ci
         displayName: "npm install"
 
