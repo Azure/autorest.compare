@@ -47,7 +47,7 @@ jobs:
           versionSpec: "14.x"
         displayName: "Install Node.js"
 
-      - script: npm install -g npm
+      - script: npm install -g npm@6
         displayName: "Update npm"
 
       - script: npm ci
