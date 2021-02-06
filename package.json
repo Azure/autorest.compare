@@ -1,6 +1,6 @@
 {
   "name": "@autorest/compare",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Compares the output between two AutoRest runs to check for material differences.",
   "main": "dist/index.js",
   "bin": {
@@ -31,9 +31,9 @@
     "chalk": "^3.0.0",
     "diff": "^4.0.1",
     "js-yaml": "^3.13.1",
-    "tree-sitter": "^0.16.0",
+    "tree-sitter": "^0.17.0",
     "tree-sitter-python": "^0.16.0",
-    "tree-sitter-typescript": "^0.16.1"
+    "tree-sitter-typescript": "^0.16.3"
   },
   "devDependencies": {
     "@types/mocha": "^5.2.7",
