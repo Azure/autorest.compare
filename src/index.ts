@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
+import "source-map-support/register";
 
 import { runOperation } from "./operations";
 import { AutoRestLanguages } from "./runner";
