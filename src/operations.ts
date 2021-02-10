@@ -214,8 +214,8 @@ export async function runOperation(
  */
 const initAutoRest = async (languageConfig: LanguageConfiguration) => {
   console.log(`Initializing autorest for language ${languageConfig.language}`);
-  await runAutoRest(languageConfig.oldArgs);
-  await runAutoRest(languageConfig.newArgs);
+  await runAutoRest([...languageConfig.oldArgs, "--help"]);
+  await runAutoRest([...languageConfig.newArgs, "--help"]);
   console.log(
     `Completed autorest initialization for language ${languageConfig.language}`
   );
