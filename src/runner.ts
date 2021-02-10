@@ -149,6 +149,6 @@ export function runAutoRest(
 }
 
 const getAutoRestCmd = () => {
-  const exe = os.platform() == "win32" ? "autorest-beta.cmd" : "autorest-beta";
+  const exe = os.platform() == "win32" ? "autorest.cmd" : "autorest";
   return path.resolve(__dirname, `../node_modules/.bin/${exe}`);
 };
