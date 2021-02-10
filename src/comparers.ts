@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import * as path from "path";
-import { AutoRestResult } from "./runner";
+import { AutoRestGenerateResult } from "./runner";
 import * as Diff from "diff";
 
 /**
@@ -342,8 +342,8 @@ export function compareFile(
  * Compares the set of output files for two AutoRest runs.
  */
 export function compareOutputFiles(
-  baseResult: AutoRestResult,
-  nextResult: AutoRestResult,
+  baseResult: AutoRestGenerateResult,
+  nextResult: AutoRestGenerateResult,
   options: CompareSourceOptions
 ): CompareResult {
   return compareItems(
@@ -366,8 +366,8 @@ export function compareOutputFiles(
  * runtime has improved or degraded between the two runs.
  */
 export async function compareDuration(
-  baseResult: AutoRestResult,
-  nextResult: AutoRestResult
+  baseResult: AutoRestGenerateResult,
+  nextResult: AutoRestGenerateResult
 ): Promise<void> {
   // TODO: Write some logic for this
 }

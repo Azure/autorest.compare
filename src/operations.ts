@@ -5,7 +5,12 @@ import * as fs from "fs";
 import * as path from "path";
 import * as chalk from "chalk";
 import { RunConfiguration, LanguageConfiguration } from "./config";
-import { runAutoRest, AutoRestResult, getBaseResult } from "./runner";
+import {
+  generateWithAutoRest,
+  AutoRestGenerateResult,
+  getBaseResult,
+  runAutoRest,
+} from "./runner";
 import { compareOutputFiles, CompareResult } from "./comparers";
 import { compareFile as compareTypeScriptFile } from "./languages/typescript";
 import { compareFile as comparePythonFile } from "./languages/python";
@@ -37,12 +42,12 @@ export class CompareOperation extends Operation {
     console.log("Comparing output for spec:", chalk.yellowBright(specPath));
 
     // Run two instances of AutoRest simultaneously
-    let oldRunPromise: Promise<AutoRestResult>;
+    let oldRunPromise: Promise<AutoRestGenerateResult>;
     if (
       languageConfig.useExistingOutput === undefined ||
       languageConfig.useExistingOutput === "none"
     ) {
-      oldRunPromise = runAutoRest(
+      oldRunPromise = generateWithAutoRest(
         languageConfig.language,
         specPath,
         oldOutputPath,
@@ -58,9 +63,9 @@ export class CompareOperation extends Operation {
       oldRunPromise = Promise.resolve(getBaseResult(oldOutputPath));
     }
 
-    let newRunPromise: Promise<AutoRestResult>;
+    let newRunPromise: Promise<AutoRestGenerateResult>;
     if (languageConfig.useExistingOutput !== "all") {
-      newRunPromise = runAutoRest(
+      newRunPromise = generateWithAutoRest(
         languageConfig.language,
         specPath,
         newOutputPath,
@@ -78,7 +83,7 @@ export class CompareOperation extends Operation {
 
     const [oldResult, newResult] = await Promise.all([
       oldRunPromise,
-      newRunPromise
+      newRunPromise,
     ]);
 
     if (debug || languageConfig.oldArgs.indexOf("--debug") > -1) {
@@ -94,8 +99,8 @@ export class CompareOperation extends Operation {
     const compareResult = compareOutputFiles(oldResult, newResult, {
       comparersByType: {
         ts: compareTypeScriptFile,
-        py: comparePythonFile
-      }
+        py: comparePythonFile,
+      },
     });
 
     if (compareResult) {
@@ -140,7 +145,7 @@ export class BaselineOperation extends Operation {
       oldOutputPath
     );
 
-    const runResult = await runAutoRest(
+    const runResult = await generateWithAutoRest(
       languageConfig.language,
       specPath,
       oldOutputPath,
@@ -161,13 +166,13 @@ export class BaselineOperation extends Operation {
   }
 }
 
-function printAutoRestResult(runResult: AutoRestResult): void {
+function printAutoRestResult(runResult: AutoRestGenerateResult): void {
   if (runResult.processOutput) {
     console.log("\nAutoRest Output:\n");
     console.log(runResult.processOutput);
   }
   console.log(`Output files under ${runResult.outputPath}:
-${runResult.outputFiles.map(f => "    " + f).join("\n")}`);
+${runResult.outputFiles.map((f) => "    " + f).join("\n")}`);
 }
 
 export async function runOperation(
@@ -179,6 +184,8 @@ export async function runOperation(
     console.log(
       `\n# Language Generator: ${chalk.greenBright(languageConfig.language)}\n`
     );
+
+    await initAutoRest(languageConfig);
     for (const specConfig of runConfig.specs) {
       for (const specPath of specConfig.specPaths) {
         const fullSpecPath = path.resolve(specConfig.specRootPath, specPath);
@@ -190,7 +197,7 @@ export async function runOperation(
         await operation.runForSpec(
           {
             ...languageConfig,
-            outputPath: path.resolve(languageConfig.outputPath, specPath)
+            outputPath: path.resolve(languageConfig.outputPath, specPath),
           },
           fullSpecPath,
           runConfig.debug
@@ -201,3 +208,15 @@ export async function runOperation(
 
   return operation.getExitCode();
 }
+
+/**
+ * Init autorest in sequence to prevent package installation race condition.
+ */
+const initAutoRest = async (languageConfig: LanguageConfiguration) => {
+  console.log(`Initializing autorest for language ${languageConfig}`);
+  await runAutoRest(languageConfig.oldArgs);
+  await runAutoRest(languageConfig.newArgs);
+  console.log(
+    `Completed autorest initialization for language ${languageConfig}`
+  );
+};
