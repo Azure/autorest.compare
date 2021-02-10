@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.3.6
+ - **Fix** race condition issue with downloading extensions
+
 ### 0.3.5
  - **Update** `@autorest/autorest` -> `autorest` as former is deprecated.
 
