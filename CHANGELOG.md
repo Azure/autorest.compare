@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.3.5
+ - **Update** `@autorest/autorest` -> `autorest` as former is deprecated.
+
 ### 0.3.4
  - **fix** Issue with `tree-sitter-typescript` latest version failing the tool. Pinned to `0.16.1`
 
