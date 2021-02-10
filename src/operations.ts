@@ -213,10 +213,10 @@ export async function runOperation(
  * Init autorest in sequence to prevent package installation race condition.
  */
 const initAutoRest = async (languageConfig: LanguageConfiguration) => {
-  console.log(`Initializing autorest for language ${languageConfig}`);
+  console.log(`Initializing autorest for language ${languageConfig.language}`);
   await runAutoRest(languageConfig.oldArgs);
   await runAutoRest(languageConfig.newArgs);
   console.log(
-    `Completed autorest initialization for language ${languageConfig}`
+    `Completed autorest initialization for language ${languageConfig.language}`
   );
 };
